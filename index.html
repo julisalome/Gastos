@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>CAJA — Control de Gastos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --bg2: #16161f;
+      --bg3: #1a1a24;
+      --border: #1e1e2a;
+      --border2: #2a2a3a;
+      --text: #f0edf6;
+      --muted: #888;
+      --dim: #555;
+      --grande: #6366f1;
+      --grande-bg: #2a2560;
+      --grande-light: #a5b4fc;
+      --hormiga: #f43f5e;
+      --hormiga-bg: #3a1520;
+      --hormiga-light: #fb7185;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: 40px;
+    }
+
+    /* ─── TOAST ─── */
+    #toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-60px);
+      padding: 10px 24px; border-radius: 20px; color: #fff; font-weight: 700;
+      font-size: 14px; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,.5);
+      transition: transform .25s ease; pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ─── MODAL ─── */
+    #overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75);
+      z-index: 998; align-items: center; justify-content: center; padding: 24px;
+    }
+    #overlay.show { display: flex; }
+    .modal {
+      background: var(--bg3); border-radius: 16px; padding: 28px 24px;
+      border: 1px solid var(--border2); width: 100%; max-width: 320px;
+    }
+    .modal h3 { font-size: 16px; font-weight: 700; color: var(--grande-light); margin-bottom: 8px; text-align: center; }
+    .modal p { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 20px; }
+    .modal-btns { display: flex; flex-direction: column; gap: 10px; }
+
+    /* ─── HEADER ─── */
+    header {
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-size: 20px; display: flex; align-items: center; gap: 8px; }
+    .logo span { font-weight: 800; letter-spacing: 4px; font-size: 18px; color: var(--grande-light); }
+    .mes-selector { display: flex; gap: 8px; }
+    select {
+      background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
+      border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer;
+      font-family: inherit; outline: none;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      display: flex; border-bottom: 1px solid var(--border);
+    }
+    .nav-btn {
+      flex: 1; padding: 13px 0; background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; letter-spacing: .3px; transition: color .15s;
+    }
+    .nav-btn.active { color: var(--grande-light); border-bottom-color: var(--grande-light); }
+
+    /* ─── MAIN ─── */
+    main { padding: 0 16px; }
+    .section { padding-top: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .hidden { display: none !important; }
+
+    /* ─── DASHBOARD ─── */
+    .total-card {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 16px; padding: 22px 24px; text-align: center;
+      border: 1px solid #2a2a4a;
+    }
+    .total-label { font-size: 12px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .total-monto { font-size: 36px; font-weight: 800; color: #e0e7ff; }
+
+    .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .tipo-card {
+      background: var(--bg2); border-radius: 14px; padding: 16px 14px;
+      border: 1px solid; text-align: center; display: flex;
+      flex-direction: column; gap: 4px;
+    }
+    .tipo-icon { font-size: 22px; }
+    .tipo-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .tipo-monto { font-size: 22px; font-weight: 800; }
+    .tipo-count { font-size: 11px; color: var(--dim); }
+
+    .bar-wrap { display: flex; height: 8px; border-radius: 8px; overflow: hidden; gap: 2px; }
+    .bar-seg { height: 100%; border-radius: 8px; transition: width .4s ease; }
+
+    .breakdown {
+      background: var(--bg2); border-radius: 14px; padding: 16px;
+      border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;
+    }
+    .breakdown-title { font-size: 13px; font-weight: 700; color: #aaa; margin-bottom: 4px; }
+    .break-row { display: flex; align-items: center; gap: 10px; }
+    .break-cat { font-size: 12px; color: #ccc; width: 75px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .break-bar { flex: 1; height: 6px; background: var(--border2); border-radius: 4px; overflow: hidden; }
+    .break-fill { height: 100%; border-radius: 4px; transition: width .4s; }
+    .break-monto { font-size: 13px; font-weight: 700; width: 85px; text-align: right; flex-shrink: 0; }
+
+    /* ─── LISTA ─── */
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      padding: 7px 14px; border-radius: 20px; background: var(--bg3);
+      border: 1px solid var(--border2); color: var(--muted); font-size: 12px;
+      font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s;
+    }
+    .chip.active { background: #2a2a4a; color: var(--grande-light); border-color: var(--grande); }
+
+    .gasto-row {
+      background: var(--bg2); border-radius: 12px; padding: 13px 14px;
+      border: 1px solid var(--border); border-left: 3px solid;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .gasto-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+    .gasto-desc { font-size: 14px; font-weight: 600; color: #e0e7ff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gasto-cat { font-size: 11px; color: var(--dim); }
+    .gasto-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .gasto-monto { font-size: 15px; font-weight: 800; }
+    .btn-delete { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 6px; transition: color .15s; }
+    .btn-delete:hover { color: var(--hormiga); }
+
+    /* ─── FORMULARIO ─── */
+    .tipo-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .toggle-btn {
+      padding: 14px 0; border-radius: 12px; border: 2px solid transparent;
+      font-size: 15px; font-weight: 700; cursor: pointer; transition: all .2s;
+      font-family: inherit;
+    }
+    .toggle-off { background: var(--bg3); color: var(--dim); border-color: var(--border2); }
+    .toggle-grande { background: var(--grande-bg); color: var(--grande-light); border-color: var(--grande); }
+    .toggle-hormiga { background: var(--hormiga-bg); color: var(--hormiga-light); border-color: var(--hormiga); }
+
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+    input[type=text], input[type=number], input[type=date] {
+      background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px;
+      padding: 13px 14px; color: var(--text); font-size: 15px; outline: none;
+      font-family: inherit; width: 100%; transition: border-color .15s;
+    }
+    input:focus { border-color: var(--grande); }
+    input[type=date]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(.4); }
+
+    .cat-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cat-chip {
+      padding: 7px 14px; border-radius: 20px; background: var(--bg3);
+      border: 1px solid var(--border2); color: var(--muted); font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s;
+    }
+    .cat-chip.active-grande { background: var(--grande-bg); color: var(--grande-light); border-color: var(--grande); }
+    .cat-chip.active-hormiga { background: var(--hormiga-bg); color: var(--hormiga-light); border-color: var(--hormiga); }
+
+    .btn-primary {
+      padding: 16px 0; border-radius: 12px; border: none;
+      color: #fff; font-size: 16px; font-weight: 800; cursor: pointer;
+      font-family: inherit; letter-spacing: .5px; margin-top: 4px;
+      transition: opacity .15s;
+    }
+    .btn-primary:active { opacity: .85; }
+    .btn-danger {
+      padding: 13px 0; border-radius: 10px; border: none; background: var(--hormiga);
+      color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .btn-ghost {
+      padding: 13px 0; border-radius: 10px; border: 1px solid var(--border2);
+      background: none; color: var(--muted); font-size: 15px; cursor: pointer; font-family: inherit;
+    }
+
+    .empty { text-align: center; color: var(--dim); font-size: 14px; padding: 48px 0; line-height: 1.8; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .gasto-row { animation: fadeIn .2s ease; }
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Modal confirmación borrado -->
+<div id="overlay">
+  <div class="modal">
+    <h3>¿Eliminás este gasto?</h3>
+    <p id="modal-desc">Esta acción no se puede deshacer.</p>
+    <div class="modal-btns">
+      <button class="btn-danger" onclick="confirmarEliminar()">Sí, borrar</button>
+      <button class="btn-ghost" onclick="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">💸 <span>CAJA</span></div>
+  <div class="mes-selector">
+    <select id="sel-mes"></select>
+    <select id="sel-anio"></select>
+  </div>
+</header>
+
+<!-- Nav -->
+<nav>
+  <button class="nav-btn active" data-view="dashboard" onclick="setView('dashboard')">📊 Resumen</button>
+  <button class="nav-btn" data-view="lista" onclick="setView('lista')">📋 Lista</button>
+  <button class="nav-btn" data-view="nuevo" onclick="setView('nuevo')">➕ Nuevo</button>
+</nav>
+
+<main>
+  <!-- DASHBOARD -->
+  <div id="view-dashboard" class="section">
+    <div class="total-card">
+      <div class="total-label" id="dash-label">Total — —</div>
+      <div class="total-monto" id="dash-total">$0</div>
+    </div>
+    <div class="duo">
+      <div class="tipo-card" style="border-color: var(--grande)">
+        <div class="tipo-icon">🏠</div>
+        <div class="tipo-label">Grandes</div>
+        <div class="tipo-monto" id="dash-grande" style="color:var(--grande)">$0</div>
+        <div class="tipo-count" id="dash-grande-count">0 items</div>
+      </div>
+      <div class="tipo-card" style="border-color: var(--hormiga)">
+        <div class="tipo-icon">🐜</div>
+        <div class="tipo-label">Hormiga</div>
+        <div class="tipo-monto" id="dash-hormiga" style="color:var(--hormiga)">$0</div>
+        <div class="tipo-count" id="dash-hormiga-count">0 items</div>
+      </div>
+    </div>
+    <div class="bar-wrap" id="dash-bar" style="display:none">
+      <div class="bar-seg" id="bar-grande" style="background:var(--grande)"></div>
+      <div class="bar-seg" id="bar-hormiga" style="background:var(--hormiga)"></div>
+    </div>
+    <div id="breakdown-grande" class="breakdown hidden"></div>
+    <div id="breakdown-hormiga" class="breakdown hidden"></div>
+    <div id="dash-empty" class="empty hidden">Sin gastos este mes.<br>¡Registrá el primero!</div>
+  </div>
+
+  <!-- LISTA -->
+  <div id="view-lista" class="section hidden">
+    <div class="filter-row">
+      <button class="chip active" data-filter="todos" onclick="setFilter('todos')">Todos</button>
+      <button class="chip" data-filter="grande" onclick="setFilter('grande')">🏠 Grandes</button>
+      <button class="chip" data-filter="hormiga" onclick="setFilter('hormiga')">🐜 Hormiga</button>
+    </div>
+    <div id="lista-container"></div>
+  </div>
+
+  <!-- NUEVO -->
+  <div id="view-nuevo" class="section hidden">
+    <div class="tipo-toggle">
+      <button class="toggle-btn toggle-grande" id="btn-grande" onclick="setTipo('grande')">🏠 Grande</button>
+      <button class="toggle-btn toggle-off" id="btn-hormiga" onclick="setTipo('hormiga')">🐜 Hormiga</button>
+    </div>
+    <div class="form-group">
+      <label>Descripción</label>
+      <input type="text" id="f-desc" placeholder="ej: Expensas enero" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label>Monto ($)</label>
+      <input type="number" id="f-monto" inputmode="decimal" placeholder="0" min="0" />
+    </div>
+    <div class="form-group">
+      <label>Categoría</label>
+      <div class="cat-grid" id="cat-grid"></div>
+    </div>
+    <div class="form-group">
+      <label>Fecha</label>
+      <input type="date" id="f-fecha" />
+    </div>
+    <button class="btn-primary" id="btn-agregar" onclick="agregarGasto()">Registrar gasto</button>
+  </div>
+</main>
+
+<script>
+  // ─── STATE ───────────────────────────────────────────────────
+  const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const MONTHS_SHORT = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const CATS_GRANDE = ["Expensas","Tarjeta","Internet","Alquiler","Seguro","Cuota","Servicio","Otro"];
+  const CATS_HORMIGA = ["Comida","Kiosco","Transporte","Café","Delivery","Farmacia","Varios"];
+
+  let gastos = JSON.parse(localStorage.getItem("caja_v1") || "[]");
+  let currentView = "dashboard";
+  let currentTipo = "grande";
+  let currentFilter = "todos";
+  let currentMes = new Date().getMonth();
+  let currentAnio = new Date().getFullYear();
+  let pendingDeleteId = null;
+  let selectedCat = "";
+
+  // ─── INIT ─────────────────────────────────────────────────────
+  function init() {
+    const now = new Date();
+    const anioActual = now.getFullYear();
+
+    const selMes = document.getElementById("sel-mes");
+    MONTHS_SHORT.forEach((m, i) => {
+      const o = new Option(m, i);
+      if (i === currentMes) o.selected = true;
+      selMes.appendChild(o);
+    });
+    selMes.addEventListener("change", e => { currentMes = +e.target.value; render(); });
+
+    const selAnio = document.getElementById("sel-anio");
+    [anioActual - 1, anioActual, anioActual + 1].forEach(a => {
+      const o = new Option(a, a);
+      if (a === currentAnio) o.selected = true;
+      selAnio.appendChild(o);
+    });
+    selAnio.addEventListener("change", e => { currentAnio = +e.target.value; render(); });
+
+    document.getElementById("f-fecha").value = todayStr();
+    document.getElementById("f-desc").addEventListener("keydown", e => { if (e.key === "Enter") agregarGasto(); });
+    document.getElementById("f-monto").addEventListener("keydown", e => { if (e.key === "Enter") agregarGasto(); });
+
+    buildCatGrid();
+    render();
+  }
+
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function save() {
+    localStorage.setItem("caja_v1", JSON.stringify(gastos));
+  }
+
+  function ars(n) {
+    return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+  }
+
+  // ─── TOAST ────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, color = "#22c55e") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.background = color;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  // ─── MODAL ────────────────────────────────────────────────────
+  function abrirModal(id) {
+    pendingDeleteId = id;
+    const g = gastos.find(x => x.id === id);
+    document.getElementById("modal-desc").textContent = g ? `"${g.descripcion}" — ${ars(g.monto)}` : "";
+    document.getElementById("overlay").classList.add("show");
+  }
+  function cerrarModal() {
+    pendingDeleteId = null;
+    document.getElementById("overlay").classList.remove("show");
+  }
+  function confirmarEliminar() {
+    if (!pendingDeleteId) return;
+    gastos = gastos.filter(g => g.id !== pendingDeleteId);
+    save();
+    cerrarModal();
+    showToast("Gasto eliminado", "#f59e0b");
+    render();
+  }
+  document.getElementById("overlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("overlay")) cerrarModal();
+  });
+
+  // ─── NAVIGATION ───────────────────────────────────────────────
+  function setView(v) {
+    currentView = v;
+    ["dashboard","lista","nuevo"].forEach(id => {
+      document.getElementById("view-" + id).classList.toggle("hidden", id !== v);
+      document.querySelector(`.nav-btn[data-view="${id}"]`).classList.toggle("active", id === v);
+    });
+    if (v === "nuevo") setTimeout(() => document.getElementById("f-desc").focus(), 50);
+    render();
+  }
+
+  function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c.dataset.filter === f));
+    renderLista();
+  }
+
+  // ─── TIPO TOGGLE ──────────────────────────────────────────────
+  function setTipo(t) {
+    currentTipo = t;
+    selectedCat = "";
+    document.getElementById("btn-grande").className = "toggle-btn " + (t === "grande" ? "toggle-grande" : "toggle-off");
+    document.getElementById("btn-hormiga").className = "toggle-btn " + (t === "hormiga" ? "toggle-hormiga" : "toggle-off");
+    document.getElementById("btn-agregar").style.background = t === "grande" ? "var(--grande)" : "var(--hormiga)";
+    document.getElementById("f-desc").placeholder = t === "grande" ? "ej: Expensas enero" : "ej: Medialunas en el bar";
+    buildCatGrid();
+  }
+
+  function buildCatGrid() {
+    const grid = document.getElementById("cat-grid");
+    grid.innerHTML = "";
+    const cats = currentTipo === "grande" ? CATS_GRANDE : CATS_HORMIGA;
+    cats.forEach(cat => {
+      const btn = document.createElement("button");
+      btn.className = "cat-chip" + (selectedCat === cat ? " active-" + currentTipo : "");
+      btn.textContent = cat;
+      btn.onclick = () => { selectedCat = cat; buildCatGrid(); };
+      grid.appendChild(btn);
+    });
+  }
+
+  // ─── AGREGAR ──────────────────────────────────────────────────
+  function agregarGasto() {
+    const desc = document.getElementById("f-desc").value.trim();
+    const montoRaw = document.getElementById("f-monto").value.replace(",", ".");
+    const monto = parseFloat(montoRaw);
+    const fecha = document.getElementById("f-fecha").value;
+
+    if (!desc) { showToast("Ingresá una descripción", "#ef4444"); document.getElementById("f-desc").focus(); return; }
+    if (isNaN(monto) || monto <= 0) { showToast("Ingresá un monto válido", "#ef4444"); return; }
+    if (!selectedCat) { showToast("Elegí una categoría", "#ef4444"); return; }
+    if (!fecha) { showToast("Elegí una fecha", "#ef4444"); return; }
+
+    const nuevo = { id: Date.now(), descripcion: desc, monto, categoria: selectedCat, fecha, tipo: currentTipo };
+    gastos.unshift(nuevo);
+    save();
+
+    document.getElementById("f-desc").value = "";
+    document.getElementById("f-monto").value = "";
+    selectedCat = "";
+    buildCatGrid();
+    document.getElementById("f-desc").focus();
+    showToast("Gasto registrado ✓");
+    render();
+  }
+
+  // ─── RENDER ───────────────────────────────────────────────────
+  function getGastosMes() {
+    return gastos.filter(g => {
+      const [y, m] = g.fecha.split("-").map(Number);
+      return m - 1 === currentMes && y === currentAnio;
+    });
+  }
+
+  function render() {
+    if (currentView === "dashboard") renderDashboard();
+    if (currentView === "lista") renderLista();
+  }
+
+  function renderDashboard() {
+    const gm = getGastosMes();
+    const grandes = gm.filter(g => g.tipo === "grande");
+    const hormiga = gm.filter(g => g.tipo === "hormiga");
+    const tG = grandes.reduce((s, g) => s + g.monto, 0);
+    const tH = hormiga.reduce((s, g) => s + g.monto, 0);
+    const total = tG + tH;
+
+    document.getElementById("dash-label").textContent = `Total ${MONTHS[currentMes]} ${currentAnio}`;
+    document.getElementById("dash-total").textContent = ars(total);
+    document.getElementById("dash-grande").textContent = ars(tG);
+    document.getElementById("dash-grande-count").textContent = grandes.length + " item" + (grandes.length !== 1 ? "s" : "");
+    document.getElementById("dash-hormiga").textContent = ars(tH);
+    document.getElementById("dash-hormiga-count").textContent = hormiga.length + " item" + (hormiga.length !== 1 ? "s" : "");
+
+    const bar = document.getElementById("dash-bar");
+    if (total > 0) {
+      bar.style.display = "flex";
+      document.getElementById("bar-grande").style.width = (tG / total * 100) + "%";
+      document.getElementById("bar-hormiga").style.width = (tH / total * 100) + "%";
+    } else {
+      bar.style.display = "none";
+    }
+
+    renderBreakdown("breakdown-grande", grandes, tG, "grande");
+    renderBreakdown("breakdown-hormiga", hormiga, tH, "hormiga");
+
+    document.getElementById("dash-empty").classList.toggle("hidden", total > 0);
+  }
+
+  function porCategoria(arr) {
+    const map = {};
+    arr.forEach(g => { map[g.categoria] = (map[g.categoria] || 0) + g.monto; });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+  }
+
+  function renderBreakdown(containerId, arr, total, tipo) {
+    const el = document.getElementById(containerId);
+    if (arr.length === 0) { el.classList.add("hidden"); return; }
+    el.classList.remove("hidden");
+    const color = tipo === "grande" ? "var(--grande)" : "var(--hormiga)";
+    const icon = tipo === "grande" ? "🏠" : "🐜";
+    const label = tipo === "grande" ? "Grandes" : "Hormiga";
+
+    let html = `<div class="breakdown-title">${icon} Desglose ${label}</div>`;
+    porCategoria(arr).forEach(([cat, monto]) => {
+      const pct = total > 0 ? (monto / total * 100) : 0;
+      html += `
+        <div class="break-row">
+          <span class="break-cat">${cat}</span>
+          <div class="break-bar"><div class="break-fill" style="width:${pct}%;background:${color}"></div></div>
+          <span class="break-monto" style="color:${color}">${ars(monto)}</span>
+        </div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  function renderLista() {
+    const gm = getGastosMes().filter(g => currentFilter === "todos" || g.tipo === currentFilter);
+    gm.sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+    const container = document.getElementById("lista-container");
+    if (gm.length === 0) {
+      container.innerHTML = '<div class="empty">Sin gastos para mostrar.</div>';
+      return;
+    }
+
+    container.innerHTML = gm.map(g => {
+      const color = g.tipo === "grande" ? "var(--grande)" : "var(--hormiga)";
+      const fechaDisplay = g.fecha.slice(5).replace("-", "/");
+      return `
+        <div class="gasto-row" style="border-left-color:${color}; margin-bottom:10px;">
+          <div class="gasto-info">
+            <span class="gasto-desc">${escHtml(g.descripcion)}</span>
+            <span class="gasto-cat">${escHtml(g.categoria)} · ${fechaDisplay}</span>
+          </div>
+          <div class="gasto-right">
+            <span class="gasto-monto" style="color:${color}">${ars(g.monto)}</span>
+            <button class="btn-delete" onclick="abrirModal(${g.id})">✕</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  init();
+</script>
+</body>
+</html>
