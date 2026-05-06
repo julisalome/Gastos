@@ -49,7 +49,6 @@
     .header-right { display:flex; align-items:center; gap:10px; }
     .mes-selector { display:flex; gap:6px; }
     select { background:var(--bg3); border:1px solid var(--border2); color:var(--text); border-radius:8px; padding:5px 8px; font-size:12px; cursor:pointer; font-family:inherit; outline:none; }
-    .badge-venc { background:var(--red); color:#fff; font-size:11px; font-weight:800; padding:3px 8px; border-radius:10px; display:none; }
 
     /* NAV */
     nav { display:flex; border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; }
@@ -249,7 +248,6 @@
 <header>
   <div class="logo">💸 <span>CAJA</span></div>
   <div class="header-right">
-    <span class="badge-venc" id="badge-venc">!</span>
     <div class="mes-selector">
       <select id="sel-mes"></select>
       <select id="sel-anio"></select>
@@ -953,7 +951,6 @@ window.guardarIngreso = async () => {
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────
 function render() {
-  updateBadgeVenc();
   if (currentView==="dashboard") renderDashboard();
   if (currentView==="lista") renderLista();
   if (currentView==="vencimientos") renderVencimientos();
@@ -962,15 +959,6 @@ function render() {
   if (currentView==="inversiones") renderInversiones();
 }
 
-function updateBadgeVenc() {
-  const proximos = vencimientos.filter(v => !v.pagado && diffDias(v.fecha) <= 7);
-  const badge = document.getElementById("badge-venc");
-  if (proximos.length > 0) {
-    badge.style.display = "inline-block";
-    badge.textContent = proximos.length;
-  } else {
-    badge.style.display = "none";
-  }
 }
 
 // ── RENDER BALANCE ────────────────────────────────────────────
@@ -1181,7 +1169,7 @@ function renderCuotas() {
 }
 
 function renderCuotaRow(c) {
-  const { cuotaActual, cuotasRestantes, terminada } = calcCuota(c);
+  const { cuotaActual, cuotasPagadas, cuotasRestantes, terminada } = calcCuota(c);
   const pct = terminada ? 100 : (cuotasPagadas / c.totalCuotas * 100);
   const cuotaLabel = terminada ? "Terminada" : `Cuota ${cuotaActual} de ${c.totalCuotas} · ${cuotasPagadas} pagada${cuotasPagadas!==1?"s":""}`;
   return `<div class="cuota-row ${terminada?"cuota-terminada":""}" onclick="abrirSheetCuota('${c.id}')" style="margin-bottom:8px">
