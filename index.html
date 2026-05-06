@@ -199,6 +199,26 @@
 
     @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
     .divider { height:1px; background:var(--border); margin:4px 0; }
+    /* INVERSIONES */
+    .portfolio-total { background:linear-gradient(135deg,#0d1f0d 0%,#0a1a2e 100%); border-radius:16px; padding:20px; border:1px solid #1a3a1a; text-align:center; }
+    .portfolio-label { font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
+    .portfolio-val { font-size:36px; font-weight:800; color:#86efac; }
+    .portfolio-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+    .inv-tipo-header { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; padding:4px 0 6px; }
+    .inv-row { background:var(--bg2); border-radius:12px; padding:13px 14px; border:1px solid var(--border); border-left:3px solid; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; cursor:pointer; transition:background .15s; animation:fadeIn .2s ease; }
+    .inv-row:hover { background:#1e1e2a; }
+    .inv-row.cripto { border-left-color:#f7931a; }
+    .inv-row.accion { border-left-color:#38bdf8; }
+    .inv-row.efectivo { border-left-color:#22c55e; }
+    .inv-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .inv-nombre { font-size:14px; font-weight:700; color:#e0e7ff; }
+    .inv-detalle { font-size:11px; color:var(--muted); }
+    .inv-right { text-align:right; flex-shrink:0; }
+    .inv-usd { font-size:15px; font-weight:800; color:#86efac; }
+    .inv-cambio { font-size:11px; font-weight:700; margin-top:1px; }
+    .inv-cambio.pos { color:var(--green); }
+    .inv-cambio.neg { color:var(--red); }
+    .inv-precio-actual { font-size:10px; color:var(--dim); margin-top:1px; }
   </style>
 </head>
 <body>
@@ -244,6 +264,7 @@
   <button class="nav-btn" data-view="vencimientos" onclick="setView('vencimientos')">🗓 Venc.</button>
   <button class="nav-btn" data-view="cuotas" onclick="setView('cuotas')">💳 Cuotas</button>
   <button class="nav-btn" data-view="historial" onclick="setView('historial')">📈 Historial</button>
+  <button class="nav-btn" data-view="inversiones" onclick="setView('inversiones')">💼 Inversiones</button>
 </nav>
 
 <main>
@@ -405,6 +426,38 @@
     </div>
   </div>
 
+  <!-- ── INVERSIONES ── -->
+  <div id="view-inversiones" class="section hidden">
+    <div class="portfolio-total">
+      <div class="portfolio-label">Portfolio total</div>
+      <div class="portfolio-val" id="inv-total">USD —</div>
+      <div class="portfolio-sub" id="inv-update-time">Actualizando precios...</div>
+    </div>
+    <div class="duo" style="margin-top:0">
+      <div class="tipo-card" style="border-color:#f7931a">
+        <div class="tipo-icon">🪙</div>
+        <div class="tipo-label">Cripto</div>
+        <div class="tipo-monto" id="inv-total-cripto" style="color:#f7931a;font-size:18px">USD 0</div>
+      </div>
+      <div class="duo" style="display:flex;flex-direction:column;gap:8px;width:100%">
+        <div class="tipo-card" style="border-color:#38bdf8;padding:10px 12px">
+          <div class="tipo-label">Acciones</div>
+          <div class="tipo-monto" id="inv-total-acciones" style="color:#38bdf8;font-size:16px">USD 0</div>
+        </div>
+        <div class="tipo-card" style="border-color:#22c55e;padding:10px 12px">
+          <div class="tipo-label">Efectivo</div>
+          <div class="tipo-monto" id="inv-total-efectivo" style="color:#22c55e;font-size:16px">USD 0</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-header">
+      <h4>Mis activos</h4>
+      <button class="btn-add-sm" onclick="abrirSheetNuevaInversion()">+ Agregar</button>
+    </div>
+    <div id="inv-container"><div class="loading-wrap"><div class="spinner"></div></div></div>
+  </div>
+
+
 </main>
 
 <script type="module">
@@ -429,6 +482,7 @@ const colGastos = collection(db, "gastos");
 const colVenc = collection(db, "vencimientos");
 const colCuotas = collection(db, "cuotas");
 const colIngresos = collection(db, "ingresos");
+const colInversiones = collection(db, "inversiones");
 
 // ── CONSTANTES ──────────────────────────────────────────────
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -437,7 +491,7 @@ const CATS_GRANDE = ["Expensas","Tarjeta","Internet","Alquiler","Seguro","Cuota"
 const CATS_HORMIGA = ["Comida","Kiosco","Transporte","Café","Delivery","Farmacia","Varios"];
 
 // ── STATE ────────────────────────────────────────────────────
-let gastos = [], vencimientos = [], cuotas = [], ingresos = [];
+let gastos = [], vencimientos = [], cuotas = [], ingresos = [], inversiones = [];
 let currentView = "dashboard";
 let currentTipo = "grande";
 let currentFilter = "todos";
@@ -445,7 +499,8 @@ let currentVencFilter = "pendientes";
 let currentMes = new Date().getMonth();
 let currentAnio = new Date().getFullYear();
 let selectedCat = "";
-let loaded = { gastos: false, venc: false, cuotas: false, ingresos: false };
+let loaded = { gastos: false, venc: false, cuotas: false, ingresos: false, inversiones: false };
+let preciosCripto = {};
 let dolarBlue = null;
 let confirmCallback = null;
 let histMesSeleccionado = null;
@@ -472,6 +527,12 @@ onSnapshot(query(colIngresos, orderBy("timestamp","desc")), snap => {
   loaded.ingresos = true; checkLoaded(); render();
 });
 
+onSnapshot(query(colInversiones, orderBy("timestamp","desc")), snap => {
+  inversiones = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  loaded.inversiones = true; checkLoaded(); render();
+  fetchPreciosCripto();
+});
+
 function checkLoaded() {
   if (Object.values(loaded).every(Boolean)) {
     document.getElementById("dash-loading").classList.add("hidden");
@@ -495,6 +556,7 @@ async function fetchDolar() {
 }
 fetchDolar();
 setInterval(fetchDolar, 5 * 60 * 1000);
+setInterval(fetchPreciosCripto, 60 * 1000);
 
 // ── HELPERS ──────────────────────────────────────────────────
 function ars(n) {
@@ -572,7 +634,7 @@ document.getElementById("overlay-confirm").addEventListener("click", e => {
 // ── NAVIGATION ───────────────────────────────────────────────
 window.setView = (v) => {
   currentView = v;
-  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial"];
+  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial","inversiones"];
   views.forEach(id => {
     document.getElementById("view-"+id).classList.toggle("hidden", id !== v);
     document.querySelector(`.nav-btn[data-view="${id}"]`)?.classList.toggle("active", id === v);
@@ -897,6 +959,7 @@ function render() {
   if (currentView==="vencimientos") renderVencimientos();
   if (currentView==="cuotas") renderCuotas();
   if (currentView==="historial") renderHistorial();
+  if (currentView==="inversiones") renderInversiones();
 }
 
 function updateBadgeVenc() {
@@ -1201,6 +1264,302 @@ function renderHistDetalle(idx) {
     </div>`;
   });
   document.getElementById("hist-detalle-body").innerHTML = html;
+}
+
+
+// ── INVERSIONES ─────────────────────────────────────────────
+
+const CRIPTO_IDS = {
+  BTC:"bitcoin", ETH:"ethereum", USDT:"tether", USDC:"usd-coin",
+  BNB:"binancecoin", SOL:"solana", ADA:"cardano", DOT:"polkadot",
+  MATIC:"matic-network", XRP:"ripple", DOGE:"dogecoin", LTC:"litecoin",
+  AVAX:"avalanche-2", LINK:"chainlink", UNI:"uniswap", ATOM:"cosmos"
+};
+
+async function fetchPreciosCripto() {
+  const criptos = inversiones.filter(i => i.tipo === "cripto");
+  if (criptos.length === 0) return;
+  const ids = [...new Set(criptos.map(c => CRIPTO_IDS[c.simbolo?.toUpperCase()] || c.coingeckoId).filter(Boolean))];
+  if (ids.length === 0) return;
+  try {
+    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=usd&include_24hr_change=true`);
+    const data = await r.json();
+    preciosCripto = data;
+    if (currentView === "inversiones") renderInversiones();
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit" });
+    document.getElementById("inv-update-time").textContent = `Precios actualizados a las ${timeStr}`;
+  } catch {
+    document.getElementById("inv-update-time").textContent = "Error al actualizar precios";
+  }
+}
+
+function getPrecioCripto(inv) {
+  const id = CRIPTO_IDS[inv.simbolo?.toUpperCase()] || inv.coingeckoId;
+  if (!id || !preciosCripto[id]) return null;
+  return preciosCripto[id];
+}
+
+window.abrirSheetNuevaInversion = () => {
+  abrirSheet(`
+    <h3>💼 Nueva inversión</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-group">
+        <label>Tipo de activo</label>
+        <select class="input-sel" id="ni-tipo" onchange="toggleInvForm()">
+          <option value="cripto">🪙 Criptomoneda</option>
+          <option value="accion">📈 Acción / CEDEAR</option>
+          <option value="efectivo">💵 Dólares en efectivo</option>
+        </select>
+      </div>
+      <div id="ni-form-cripto">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-group"><label>Símbolo</label><input type="text" id="ni-simbolo" placeholder="ej: BTC, ETH, SOL" style="text-transform:uppercase" /></div>
+          <div class="form-group"><label>Cantidad</label><input type="number" id="ni-cantidad" placeholder="ej: 0.5" step="any" /></div>
+          <div style="font-size:12px;color:var(--muted);background:var(--bg3);padding:10px;border-radius:8px">
+            Soportados con precio automático: BTC, ETH, USDT, USDC, BNB, SOL, ADA, DOT, MATIC, XRP, DOGE, LTC, AVAX, LINK, UNI, ATOM.<br>Otros símbolos requieren precio manual.
+          </div>
+          <div class="form-group" id="ni-precio-manual-wrap" style="display:none"><label>Precio actual (USD)</label><input type="number" id="ni-precio-manual" placeholder="0" /></div>
+        </div>
+      </div>
+      <div id="ni-form-accion" style="display:none">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-group"><label>Nombre / Ticker</label><input type="text" id="ni-accion-nombre" placeholder="ej: AAPL, YPF, MELI" /></div>
+          <div class="form-group"><label>Cantidad de acciones</label><input type="number" id="ni-accion-cant" placeholder="ej: 10" /></div>
+          <div class="form-group"><label>Precio por acción (USD)</label><input type="number" id="ni-accion-precio" placeholder="0" step="any" /></div>
+        </div>
+      </div>
+      <div id="ni-form-efectivo" style="display:none">
+        <div class="form-group"><label>Monto en USD</label><input type="number" id="ni-efectivo-monto" placeholder="0" /></div>
+        <div class="form-group"><label>Descripción (opcional)</label><input type="text" id="ni-efectivo-desc" placeholder="ej: Caja de ahorro, Billetera" /></div>
+      </div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="guardarNuevaInversion()">Agregar</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+  // listener para símbolo cripto
+  setTimeout(() => {
+    const simInput = document.getElementById("ni-simbolo");
+    if (simInput) simInput.addEventListener("input", e => {
+      const sym = e.target.value.toUpperCase();
+      const manual = document.getElementById("ni-precio-manual-wrap");
+      if (sym && !CRIPTO_IDS[sym]) {
+        manual.style.display = "flex";
+        manual.style.flexDirection = "column";
+        manual.style.gap = "7px";
+      } else { manual.style.display = "none"; }
+    });
+  }, 100);
+};
+
+window.toggleInvForm = () => {
+  const tipo = document.getElementById("ni-tipo").value;
+  document.getElementById("ni-form-cripto").style.display = tipo==="cripto" ? "block" : "none";
+  document.getElementById("ni-form-accion").style.display = tipo==="accion" ? "block" : "none";
+  document.getElementById("ni-form-efectivo").style.display = tipo==="efectivo" ? "block" : "none";
+};
+
+window.guardarNuevaInversion = async () => {
+  const tipo = document.getElementById("ni-tipo").value;
+  let data = { tipo, timestamp: serverTimestamp() };
+  if (tipo === "cripto") {
+    const simbolo = document.getElementById("ni-simbolo").value.trim().toUpperCase();
+    const cantidad = parseFloat(document.getElementById("ni-cantidad").value.replace(",","."));
+    if (!simbolo || isNaN(cantidad) || cantidad <= 0) { showToast("Completá todos los campos","var(--red)"); return; }
+    data = { ...data, simbolo, cantidad };
+    if (!CRIPTO_IDS[simbolo]) {
+      const pm = parseFloat(document.getElementById("ni-precio-manual")?.value.replace(",","."));
+      if (isNaN(pm) || pm <= 0) { showToast("Ingresá el precio manual para este símbolo","var(--red)"); return; }
+      data.precioManual = pm;
+    }
+  } else if (tipo === "accion") {
+    const nombre = document.getElementById("ni-accion-nombre").value.trim();
+    const cantidad = parseFloat(document.getElementById("ni-accion-cant").value.replace(",","."));
+    const precio = parseFloat(document.getElementById("ni-accion-precio").value.replace(",","."));
+    if (!nombre || isNaN(cantidad) || cantidad <= 0 || isNaN(precio) || precio <= 0) { showToast("Completá todos los campos","var(--red)"); return; }
+    data = { ...data, nombre, cantidad, precio };
+  } else {
+    const monto = parseFloat(document.getElementById("ni-efectivo-monto").value.replace(",","."));
+    const desc = document.getElementById("ni-efectivo-desc").value.trim() || "Efectivo";
+    if (isNaN(monto) || monto <= 0) { showToast("Ingresá un monto válido","var(--red)"); return; }
+    data = { ...data, monto, nombre: desc };
+  }
+  try {
+    await addDoc(colInversiones, data);
+    cerrarSheet(); showToast("Inversión agregada ✓");
+    if (tipo === "cripto") fetchPreciosCripto();
+  } catch { showToast("Error al guardar","var(--red)"); }
+};
+
+window.abrirSheetInversion = (id) => {
+  const inv = inversiones.find(x => x.id === id);
+  if (!inv) return;
+  const valorUSD = calcValorInversion(inv);
+  let resumenHtml = valorUSD !== null
+    ? `<div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border2);margin-bottom:4px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">VALOR ACTUAL</div>
+        <div style="font-size:22px;font-weight:800;color:#86efac">${usdFmt(valorUSD)}</div>
+       </div>` : "";
+  if (inv.tipo === "cripto") {
+    const pc = getPrecioCripto(inv);
+    const precioActual = pc ? pc.usd : inv.precioManual;
+    abrirSheet(`
+      <h3>🪙 ${escHtml(inv.simbolo)}</h3>
+      ${resumenHtml}
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-group"><label>Símbolo</label><input type="text" id="ei-simbolo" value="${escHtml(inv.simbolo)}" style="text-transform:uppercase" /></div>
+        <div class="form-group"><label>Cantidad</label><input type="number" id="ei-cantidad" value="${inv.cantidad}" step="any" /></div>
+        ${!CRIPTO_IDS[inv.simbolo] ? `<div class="form-group"><label>Precio manual (USD)</label><input type="number" id="ei-precio-manual" value="${inv.precioManual||""}" /></div>` : `<div style="font-size:12px;color:var(--muted)">Precio actual: ${precioActual ? usdFmt(precioActual) : "cargando..."}</div>`}
+        <button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionInversion('${id}','cripto')">Guardar</button>
+        <button class="btn-danger" onclick="eliminarInversion('${id}')">Eliminar</button>
+        <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+      </div>
+    `);
+  } else if (inv.tipo === "accion") {
+    abrirSheet(`
+      <h3>📈 ${escHtml(inv.nombre)}</h3>
+      ${resumenHtml}
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-group"><label>Nombre / Ticker</label><input type="text" id="ei-nombre" value="${escHtml(inv.nombre)}" /></div>
+        <div class="form-group"><label>Cantidad</label><input type="number" id="ei-cant" value="${inv.cantidad}" /></div>
+        <div class="form-group"><label>Precio por acción (USD)</label><input type="number" id="ei-precio" value="${inv.precio}" step="any" /></div>
+        <button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionInversion('${id}','accion')">Guardar</button>
+        <button class="btn-danger" onclick="eliminarInversion('${id}')">Eliminar</button>
+        <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+      </div>
+    `);
+  } else {
+    abrirSheet(`
+      <h3>💵 ${escHtml(inv.nombre)}</h3>
+      ${resumenHtml}
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-group"><label>Descripción</label><input type="text" id="ei-desc" value="${escHtml(inv.nombre)}" /></div>
+        <div class="form-group"><label>Monto (USD)</label><input type="number" id="ei-monto" value="${inv.monto}" /></div>
+        <button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionInversion('${id}','efectivo')">Guardar</button>
+        <button class="btn-danger" onclick="eliminarInversion('${id}')">Eliminar</button>
+        <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+      </div>
+    `);
+  }
+};
+
+window.guardarEdicionInversion = async (id, tipo) => {
+  let updates = {};
+  if (tipo === "cripto") {
+    const simbolo = document.getElementById("ei-simbolo").value.trim().toUpperCase();
+    const cantidad = parseFloat(document.getElementById("ei-cantidad").value.replace(",","."));
+    if (!simbolo || isNaN(cantidad) || cantidad <= 0) { showToast("Datos inválidos","var(--red)"); return; }
+    updates = { simbolo, cantidad };
+    const pmEl = document.getElementById("ei-precio-manual");
+    if (pmEl) { const pm = parseFloat(pmEl.value.replace(",",".")); if (!isNaN(pm)) updates.precioManual = pm; }
+  } else if (tipo === "accion") {
+    const nombre = document.getElementById("ei-nombre").value.trim();
+    const cantidad = parseFloat(document.getElementById("ei-cant").value.replace(",","."));
+    const precio = parseFloat(document.getElementById("ei-precio").value.replace(",","."));
+    if (!nombre || isNaN(cantidad) || isNaN(precio)) { showToast("Datos inválidos","var(--red)"); return; }
+    updates = { nombre, cantidad, precio };
+  } else {
+    const monto = parseFloat(document.getElementById("ei-monto").value.replace(",","."));
+    const desc = document.getElementById("ei-desc").value.trim();
+    if (isNaN(monto) || !desc) { showToast("Datos inválidos","var(--red)"); return; }
+    updates = { monto, nombre: desc };
+  }
+  try {
+    await updateDoc(doc(db,"inversiones",id), updates);
+    cerrarSheet(); showToast("Actualizado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.eliminarInversion = (id) => {
+  const inv = inversiones.find(x => x.id === id);
+  pedirConfirm("¿Eliminás esta inversión?", inv ? `"${inv.simbolo||inv.nombre}"` : "", async () => {
+    await deleteDoc(doc(db,"inversiones",id));
+    cerrarSheet(); showToast("Eliminado","var(--yellow)");
+  });
+};
+
+function calcValorInversion(inv) {
+  if (inv.tipo === "cripto") {
+    const pc = getPrecioCripto(inv);
+    if (pc) return inv.cantidad * pc.usd;
+    if (inv.precioManual) return inv.cantidad * inv.precioManual;
+    return null;
+  }
+  if (inv.tipo === "accion") return inv.cantidad * inv.precio;
+  if (inv.tipo === "efectivo") return inv.monto;
+  return null;
+}
+
+function usdFmt(n) {
+  return "USD " + new Intl.NumberFormat("es-AR", { minimumFractionDigits:2, maximumFractionDigits:2 }).format(n);
+}
+
+function renderInversiones() {
+  const container = document.getElementById("inv-container");
+  if (!container) return;
+
+  if (inversiones.length === 0) {
+    container.innerHTML = '<div class="empty">Sin activos cargados.<br>Usá "+ Agregar" para empezar.</div>';
+    document.getElementById("inv-total").textContent = "USD 0";
+    document.getElementById("inv-total-cripto").textContent = "USD 0";
+    document.getElementById("inv-total-acciones").textContent = "USD 0";
+    document.getElementById("inv-total-efectivo").textContent = "USD 0";
+    return;
+  }
+
+  let totalCripto = 0, totalAcciones = 0, totalEfectivo = 0;
+  const grupos = { cripto: [], accion: [], efectivo: [] };
+  inversiones.forEach(inv => { grupos[inv.tipo]?.push(inv); });
+
+  inversiones.forEach(inv => {
+    const v = calcValorInversion(inv);
+    if (v === null) return;
+    if (inv.tipo === "cripto") totalCripto += v;
+    else if (inv.tipo === "accion") totalAcciones += v;
+    else totalEfectivo += v;
+  });
+
+  const total = totalCripto + totalAcciones + totalEfectivo;
+  document.getElementById("inv-total").textContent = usdFmt(total);
+  document.getElementById("inv-total-cripto").textContent = usdFmt(totalCripto);
+  document.getElementById("inv-total-acciones").textContent = usdFmt(totalAcciones);
+  document.getElementById("inv-total-efectivo").textContent = usdFmt(totalEfectivo);
+
+  let html = "";
+  const tipoConfig = {
+    cripto: { label:"🪙 Criptomonedas", clase:"cripto" },
+    accion: { label:"📈 Acciones / CEDEARs", clase:"accion" },
+    efectivo: { label:"💵 Efectivo / Caja de ahorro", clase:"efectivo" }
+  };
+  ["cripto","accion","efectivo"].forEach(tipo => {
+    if (grupos[tipo].length === 0) return;
+    html += `<div class="inv-tipo-header">${tipoConfig[tipo].label}</div>`;
+    grupos[tipo].forEach(inv => {
+      const valor = calcValorInversion(inv);
+      const pc = inv.tipo === "cripto" ? getPrecioCripto(inv) : null;
+      const cambio24h = pc ? pc.usd_24h_change : null;
+      const nombre = inv.tipo === "cripto" ? inv.simbolo : inv.nombre;
+      const detalle = inv.tipo === "cripto"
+        ? `${inv.cantidad} ${inv.simbolo}${pc ? ` · Precio: ${usdFmt(pc.usd)}` : inv.precioManual ? ` · Precio manual: ${usdFmt(inv.precioManual)}` : " · Cargando..."}`
+        : inv.tipo === "accion"
+        ? `${inv.cantidad} acc. · Precio: ${usdFmt(inv.precio)}`
+        : "";
+      const cambioHtml = cambio24h !== null
+        ? `<div class="inv-cambio ${cambio24h >= 0 ? "pos" : "neg"}">${cambio24h >= 0 ? "▲" : "▼"} ${Math.abs(cambio24h).toFixed(2)}% 24h</div>`
+        : "";
+      html += `<div class="inv-row ${tipoConfig[tipo].clase}" onclick="abrirSheetInversion('${inv.id}')">
+        <div class="inv-info">
+          <span class="inv-nombre">${escHtml(nombre)}</span>
+          <span class="inv-detalle">${escHtml(detalle)}</span>
+        </div>
+        <div class="inv-right">
+          <div class="inv-usd">${valor !== null ? usdFmt(valor) : "—"}</div>
+          ${cambioHtml}
+        </div>
+      </div>`;
+    });
+  });
+  container.innerHTML = html;
 }
 
 // ── INIT ─────────────────────────────────────────────────────
