@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>CAJA — Control de Gastos</title>
-  <link rel="manifest" href="data:application/json,{%22name%22:%22CAJA%22,%22short_name%22:%22CAJA%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230f0f13%22,%22theme_color%22:%22%236366f1%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%253Csvg%2520xmlns%253D'http%253A//www.w3.org/2000/svg'%2520viewBox%253D'0%25200%252032%252032'%253E%253Crect%2520width%253D'32'%2520height%253D'32'%2520rx%253D'8'%2520fill%253D'%25236366f1'/%253E%253Ctext%2520x%253D'50%2525'%2520y%253D'50%2525'%2520dominant-baseline%253D'middle'%2520text-anchor%253D'middle'%2520font-size%253D'18'%253E%25F0%259F%2592%25B8%253C/text%253E%253C/svg%253E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMmEyNTYwIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzFhMWEyZSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMTUiIGZpbGw9InVybCgjZykiLz4KICA8cmVjdCB4PSIzMCIgeT0iMzAiIHdpZHRoPSI0NTIiIGhlaWdodD0iNDUyIiByeD0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIxOCIgb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMjU2IiB5PSIzMDAiIGZvbnQtc2l6ZT0iMjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LWZhbWlseT0iQXBwbGUgQ29sb3IgRW1vamksU2Vnb2UgVUkgRW1vamksc2Fucy1zZXJpZiI+8J+SuDwvdGV4dD4KPC9zdmc+" />
+  <link rel="shortcut icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMmEyNTYwIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzFhMWEyZSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMTUiIGZpbGw9InVybCgjZykiLz4KICA8cmVjdCB4PSIzMCIgeT0iMzAiIHdpZHRoPSI0NTIiIGhlaWdodD0iNDUyIiByeD0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIxOCIgb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMjU2IiB5PSIzMDAiIGZvbnQtc2l6ZT0iMjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LWZhbWlseT0iQXBwbGUgQ29sb3IgRW1vamksU2Vnb2UgVUkgRW1vamksc2Fucy1zZXJpZiI+8J+SuDwvdGV4dD4KPC9zdmc+" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMmEyNTYwIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzFhMWEyZSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMTUiIGZpbGw9InVybCgjZykiLz4KICA8cmVjdCB4PSIzMCIgeT0iMzAiIHdpZHRoPSI0NTIiIGhlaWdodD0iNDUyIiByeD0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIxOCIgb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMjU2IiB5PSIzMDAiIGZvbnQtc2l6ZT0iMjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LWZhbWlseT0iQXBwbGUgQ29sb3IgRW1vamksU2Vnb2UgVUkgRW1vamksc2Fucy1zZXJpZiI+8J+SuDwvdGV4dD4KPC9zdmc+" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -1980,6 +1982,28 @@ window.selTagNuevo = (btn, tag) => {
   if (current === tag) { hidden.value = ""; }
   else { btn.classList.add("active-grande"); hidden.value = tag; }
 };
+
+
+// ── PWA MANIFEST ─────────────────────────────────────────
+const manifestData = {
+  name: "CAJA",
+  short_name: "CAJA",
+  start_url: "./",
+  display: "standalone",
+  background_color: "#0f0f13",
+  theme_color: "#6366f1",
+  icons: [
+    { src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMmEyNTYwIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzFhMWEyZSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMTUiIGZpbGw9InVybCgjZykiLz4KICA8cmVjdCB4PSIzMCIgeT0iMzAiIHdpZHRoPSI0NTIiIGhlaWdodD0iNDUyIiByeD0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIxOCIgb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMjU2IiB5PSIzMDAiIGZvbnQtc2l6ZT0iMjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LWZhbWlseT0iQXBwbGUgQ29sb3IgRW1vamksU2Vnb2UgVUkgRW1vamksc2Fucy1zZXJpZiI+8J+SuDwvdGV4dD4KPC9zdmc+", sizes: "512x512", type: "image/svg+xml" },
+    { src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMmEyNTYwIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzFhMWEyZSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMTUiIGZpbGw9InVybCgjZykiLz4KICA8cmVjdCB4PSIzMCIgeT0iMzAiIHdpZHRoPSI0NTIiIGhlaWdodD0iNDUyIiByeD0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIxOCIgb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMjU2IiB5PSIzMDAiIGZvbnQtc2l6ZT0iMjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LWZhbWlseT0iQXBwbGUgQ29sb3IgRW1vamksU2Vnb2UgVUkgRW1vamksc2Fucy1zZXJpZiI+8J+SuDwvdGV4dD4KPC9zdmc+", sizes: "192x192", type: "image/svg+xml" },
+    { src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMmEyNTYwIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzFhMWEyZSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMTUiIGZpbGw9InVybCgjZykiLz4KICA8cmVjdCB4PSIzMCIgeT0iMzAiIHdpZHRoPSI0NTIiIGhlaWdodD0iNDUyIiByeD0iOTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzYzNjZmMSIgc3Ryb2tlLXdpZHRoPSIxOCIgb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMjU2IiB5PSIzMDAiIGZvbnQtc2l6ZT0iMjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiBmb250LWZhbWlseT0iQXBwbGUgQ29sb3IgRW1vamksU2Vnb2UgVUkgRW1vamksc2Fucy1zZXJpZiI+8J+SuDwvdGV4dD4KPC9zdmc+", sizes: "any", type: "image/svg+xml" }
+  ]
+};
+const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: "application/manifest+json"});
+const manifestUrl = URL.createObjectURL(manifestBlob);
+const manifestLink = document.createElement("link");
+manifestLink.rel = "manifest";
+manifestLink.href = manifestUrl;
+document.head.appendChild(manifestLink);
 
 // Service Worker para PWA
 if ("serviceWorker" in navigator) {
