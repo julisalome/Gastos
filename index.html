@@ -57,9 +57,10 @@
     select { background:var(--bg3); border:1px solid var(--border2); color:var(--text); border-radius:8px; padding:5px 8px; font-size:12px; cursor:pointer; font-family:inherit; outline:none; }
 
     /* NAV */
-    nav { display:flex; border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; }
+    nav { display:flex; border-bottom:1px solid var(--border); overflow-x:auto; overflow-y:hidden; scrollbar-width:none; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
     nav::-webkit-scrollbar { display:none; }
-    .nav-btn { flex:0 0 auto; padding:12px 14px; background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; transition:color .15s; }
+    .nav-btn { scroll-snap-align:start; }
+    .nav-btn { flex:0 0 auto; padding:12px 12px; background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; transition:color .15s; touch-action:pan-x; }
     .nav-btn.active { color:var(--grande-light); border-bottom-color:var(--grande-light); }
 
     main { padding:0 16px; }
