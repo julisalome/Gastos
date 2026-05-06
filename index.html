@@ -804,7 +804,7 @@ window.abrirSheetCuota = (id) => {
   const { cuotaActual, cuotasRestantes, terminada } = calcCuota(c);
   abrirSheet(`
     <h3>${escHtml(c.descripcion)}</h3>
-    <div style="margin-bottom:16px;font-size:13px;color:var(--muted)">${escHtml(c.tarjeta)} · Cuota ${cuotaActual} de ${c.totalCuotas}</div>
+    <div style="margin-bottom:16px;font-size:13px;color:var(--muted)">${escHtml(c.tarjeta)} · ${terminada ? "Terminada" : `Pagadas ${cuotasPagadas} de ${c.totalCuotas} · En curso: cuota ${cuotaActual}`}</div>
     <div style="display:flex;flex-direction:column;gap:12px">
       <div class="form-group"><label>Descripción</label><input type="text" id="ec-desc" value="${escHtml(c.descripcion)}" /></div>
       <div class="form-group"><label>Tarjeta</label><input type="text" id="ec-tarjeta" value="${escHtml(c.tarjeta)}" /></div>
@@ -814,8 +814,8 @@ window.abrirSheetCuota = (id) => {
       <div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border2)">
         <div style="font-size:12px;color:var(--muted);margin-bottom:6px">RESUMEN</div>
         <div style="font-size:13px;display:flex;flex-direction:column;gap:4px">
-          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Pagado hasta ahora</span><span style="font-weight:700;color:var(--green)">${ars(c.montoCuota * Math.min(cuotaActual-1, c.totalCuotas))}</span></div>
-          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Restante</span><span style="font-weight:700;color:var(--yellow)">${ars(c.montoCuota * cuotasRestantes)}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Pagado hasta ahora</span><span style="font-weight:700;color:var(--green)">${ars(c.montoCuota * cuotasPagadas)}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Restante (incl. este mes)</span><span style="font-weight:700;color:var(--yellow)">${ars(c.montoCuota * cuotasRestantes)}</span></div>
           <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Total compra</span><span style="font-weight:700">${ars(c.montoCuota * c.totalCuotas)}</span></div>
         </div>
       </div>
@@ -849,11 +849,15 @@ function calcCuota(c) {
   const [y, m] = c.mesInicio.split("-").map(Number);
   const inicio = new Date(y, m-1, 1);
   const ahora = new Date(currentAnio, currentMes, 1);
+  // diffMeses: cuántos meses pasaron desde el inicio (0 = estamos en el mes de inicio)
   const diffMeses = (ahora.getFullYear()-inicio.getFullYear())*12 + (ahora.getMonth()-inicio.getMonth());
-  const cuotaActual = Math.min(Math.max(diffMeses+1, 1), c.totalCuotas+1);
-  const cuotasRestantes = Math.max(c.totalCuotas - (cuotaActual-1), 0);
-  const terminada = cuotaActual > c.totalCuotas;
-  return { cuotaActual, cuotasRestantes, terminada };
+  // cuotaEnCurso: la cuota que se está pagando este mes (1-based)
+  const cuotaEnCurso = Math.min(Math.max(diffMeses+1, 1), c.totalCuotas+1);
+  // cuotasPagadas: las que ya pasaron (el mes actual NO cuenta como pagado)
+  const cuotasPagadas = Math.min(Math.max(diffMeses, 0), c.totalCuotas);
+  const cuotasRestantes = Math.max(c.totalCuotas - cuotasPagadas, 0);
+  const terminada = cuotaEnCurso > c.totalCuotas;
+  return { cuotaActual: cuotaEnCurso, cuotasPagadas, cuotasRestantes, terminada };
 }
 
 // ── INGRESO ──────────────────────────────────────────────────
@@ -1115,8 +1119,8 @@ function renderCuotas() {
 
 function renderCuotaRow(c) {
   const { cuotaActual, cuotasRestantes, terminada } = calcCuota(c);
-  const pct = terminada ? 100 : ((cuotaActual-1) / c.totalCuotas * 100);
-  const cuotaLabel = terminada ? "Terminada" : `Cuota ${cuotaActual} de ${c.totalCuotas}`;
+  const pct = terminada ? 100 : (cuotasPagadas / c.totalCuotas * 100);
+  const cuotaLabel = terminada ? "Terminada" : `Cuota ${cuotaActual} de ${c.totalCuotas} · ${cuotasPagadas} pagada${cuotasPagadas!==1?"s":""}`;
   return `<div class="cuota-row ${terminada?"cuota-terminada":""}" onclick="abrirSheetCuota('${c.id}')" style="margin-bottom:8px">
     <div class="cuota-top">
       <div>
