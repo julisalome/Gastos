@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>CAJA — Control de Gastos</title>
+  <link rel="manifest" href="data:application/json,{%22name%22:%22CAJA%22,%22short_name%22:%22CAJA%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230f0f13%22,%22theme_color%22:%22%236366f1%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%253Csvg%2520xmlns%253D'http%253A//www.w3.org/2000/svg'%2520viewBox%253D'0%25200%252032%252032'%253E%253Crect%2520width%253D'32'%2520height%253D'32'%2520rx%253D'8'%2520fill%253D'%25236366f1'/%253E%253Ctext%2520x%253D'50%2525'%2520y%253D'50%2525'%2520dominant-baseline%253D'middle'%2520text-anchor%253D'middle'%2520font-size%253D'18'%253E%25F0%259F%2592%25B8%253C/text%253E%253C/svg%253E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CAJA" />
+  <meta name="theme-color" content="#6366f1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -198,6 +204,39 @@
 
     @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
     .divider { height:1px; background:var(--border); margin:4px 0; }
+
+    /* BUSCADOR */
+    .search-wrap { position:relative; }
+    .search-input { background:var(--bg3); border:1px solid var(--border2); border-radius:10px; padding:11px 14px 11px 38px; color:var(--text); font-size:14px; outline:none; font-family:inherit; width:100%; transition:border-color .15s; }
+    .search-input:focus { border-color:var(--grande); }
+    .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:15px; pointer-events:none; }
+    .search-clear { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--dim); cursor:pointer; font-size:16px; padding:2px 4px; }
+
+    /* PRESUPUESTO */
+    .budget-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+    .budget-row:last-child { border-bottom:none; }
+    .budget-cat { font-size:13px; font-weight:600; color:var(--text); width:90px; flex-shrink:0; }
+    .budget-bar-wrap { flex:1; height:8px; background:var(--border2); border-radius:4px; overflow:hidden; }
+    .budget-bar-fill { height:100%; border-radius:4px; transition:width .4s; }
+    .budget-nums { font-size:11px; color:var(--muted); text-align:right; width:100px; flex-shrink:0; }
+    .budget-pct { font-size:11px; font-weight:700; width:36px; text-align:right; flex-shrink:0; }
+
+    /* TAGS */
+    .tag { display:inline-block; padding:2px 8px; border-radius:8px; font-size:10px; font-weight:700; margin-right:4px; }
+    .tag-necesario { background:#1a3a1a; color:#86efac; }
+    .tag-impulsivo { background:#3a1520; color:#fb7185; }
+    .tag-trabajo { background:#1e2240; color:#a5b4fc; }
+    .tag-otro { background:#2a2a1a; color:#fde68a; }
+
+    /* PROYECCION */
+    .proyeccion-card { background:linear-gradient(135deg,#1a1230 0%,#0f1a2e 100%); border-radius:14px; padding:16px; border:1px solid #2a1a4a; }
+
+    /* GRAFICO TORTA */
+    .donut-wrap { display:flex; align-items:center; gap:16px; }
+    .donut-legend { display:flex; flex-direction:column; gap:6px; flex:1; }
+    .donut-legend-item { display:flex; align-items:center; gap:8px; font-size:12px; }
+    .donut-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
     /* INVERSIONES */
     .portfolio-total { background:linear-gradient(135deg,#0d1f0d 0%,#0a1a2e 100%); border-radius:16px; padding:20px; border:1px solid #1a3a1a; text-align:center; }
     .portfolio-label { font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
@@ -263,6 +302,8 @@
   <button class="nav-btn" data-view="cuotas" onclick="setView('cuotas')">💳 Cuotas</button>
   <button class="nav-btn" data-view="historial" onclick="setView('historial')">📈 Historial</button>
   <button class="nav-btn" data-view="inversiones" onclick="setView('inversiones')">💼 Inversiones</button>
+  <button class="nav-btn" data-view="buscar" onclick="setView('buscar')">🔍 Buscar</button>
+  <button class="nav-btn" data-view="presupuesto" onclick="setView('presupuesto')">🎯 Presupuesto</button>
 </nav>
 
 <main>
@@ -334,6 +375,21 @@
         <div id="dash-venc-list"></div>
       </div>
 
+      <!-- Gráfico torta -->
+      <div class="card" id="dash-torta" style="display:none">
+        <div class="card-title">📊 Por categoría</div>
+        <div class="donut-wrap">
+          <canvas id="donut-canvas" width="110" height="110"></canvas>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+
+      <!-- Proyección -->
+      <div class="proyeccion-card" id="dash-proyeccion" style="display:none">
+        <div class="card-title" style="color:#c4b5fd">🔮 Proyección del mes</div>
+        <div id="proyeccion-body"></div>
+      </div>
+
       <div id="breakdown-grande" class="breakdown hidden"></div>
       <div id="breakdown-hormiga" class="breakdown hidden"></div>
       <div id="dash-empty" class="empty hidden">Sin gastos este mes.<br>¡Registrá el primero!</div>
@@ -371,6 +427,20 @@
     <div class="form-group">
       <label>Fecha</label>
       <input type="date" id="f-fecha" />
+    </div>
+    <div class="form-group">
+      <label>Nota (opcional)</label>
+      <input type="text" id="f-nota" placeholder="ej: regalo, necesario..." autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label>Etiqueta (opcional)</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="tag-grid-nuevo">
+        <button class="cat-chip" data-ntag="necesario" onclick="selTagNuevo(this,'necesario')">necesario</button>
+        <button class="cat-chip" data-ntag="impulsivo" onclick="selTagNuevo(this,'impulsivo')">impulsivo</button>
+        <button class="cat-chip" data-ntag="trabajo" onclick="selTagNuevo(this,'trabajo')">trabajo</button>
+        <button class="cat-chip" data-ntag="otro" onclick="selTagNuevo(this,'otro')">otro</button>
+      </div>
+      <input type="hidden" id="f-tag" value="" />
     </div>
     <button class="btn-primary" id="btn-agregar" onclick="agregarGasto()" style="background:var(--grande)">Registrar gasto</button>
   </div>
@@ -456,6 +526,28 @@
   </div>
 
 
+  <!-- ── BUSCAR ── -->
+  <div id="view-buscar" class="section hidden">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="buscar-input" placeholder="Buscar en todos los gastos..." autocomplete="off" />
+      <button class="search-clear" id="buscar-clear" onclick="limpiarBusqueda()" style="display:none">✕</button>
+    </div>
+    <div id="buscar-results"></div>
+  </div>
+
+  <!-- ── PRESUPUESTO ── -->
+  <div id="view-presupuesto" class="section hidden">
+    <div class="section-header">
+      <h4>🎯 Presupuesto mensual</h4>
+      <button class="btn-add-sm" onclick="abrirSheetNuevoPresupuesto()">+ Agregar</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);padding:4px 0 8px">Definí topes por categoría y controlá tu gasto mes a mes.</div>
+    <div id="presupuesto-container"></div>
+    <div id="presupuesto-empty" class="empty hidden">Sin presupuestos configurados.<br>Usá "+ Agregar" para definir un tope.</div>
+  </div>
+
+
 </main>
 
 <script type="module">
@@ -481,6 +573,7 @@ const colVenc = collection(db, "vencimientos");
 const colCuotas = collection(db, "cuotas");
 const colIngresos = collection(db, "ingresos");
 const colInversiones = collection(db, "inversiones");
+const colPresupuestos = collection(db, "presupuestos");
 
 // ── CONSTANTES ──────────────────────────────────────────────
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -489,7 +582,7 @@ const CATS_GRANDE = ["Expensas","Tarjeta","Internet","Alquiler","Seguro","Cuota"
 const CATS_HORMIGA = ["Comida","Kiosco","Transporte","Café","Delivery","Farmacia","Varios"];
 
 // ── STATE ────────────────────────────────────────────────────
-let gastos = [], vencimientos = [], cuotas = [], ingresos = [], inversiones = [];
+let gastos = [], vencimientos = [], cuotas = [], ingresos = [], inversiones = [], presupuestos = [];
 let currentView = "dashboard";
 let currentTipo = "grande";
 let currentFilter = "todos";
@@ -497,7 +590,7 @@ let currentVencFilter = "pendientes";
 let currentMes = new Date().getMonth();
 let currentAnio = new Date().getFullYear();
 let selectedCat = "";
-let loaded = { gastos: false, venc: false, cuotas: false, ingresos: false, inversiones: false };
+let loaded = { gastos: false, venc: false, cuotas: false, ingresos: false, inversiones: false, presupuestos: false };
 let preciosCripto = {};
 let dolarBlue = null;
 let confirmCallback = null;
@@ -524,6 +617,11 @@ onSnapshot(query(colIngresos, orderBy("timestamp","desc")), snap => {
   ingresos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   loaded.ingresos = true; checkLoaded(); render();
 }, () => { loaded.ingresos = true; checkLoaded(); });
+
+onSnapshot(query(colPresupuestos, orderBy("timestamp","desc")), snap => {
+  presupuestos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  loaded.presupuestos = true; checkLoaded(); render();
+}, () => { loaded.presupuestos = true; checkLoaded(); });
 
 onSnapshot(query(colInversiones, orderBy("timestamp","desc")), snap => {
   inversiones = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -638,7 +736,7 @@ document.getElementById("overlay-confirm").addEventListener("click", e => {
 // ── NAVIGATION ───────────────────────────────────────────────
 window.setView = (v) => {
   currentView = v;
-  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial","inversiones"];
+  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial","inversiones","buscar","presupuesto"];
   views.forEach(id => {
     document.getElementById("view-"+id).classList.toggle("hidden", id !== v);
     document.querySelector(`.nav-btn[data-view="${id}"]`)?.classList.toggle("active", id === v);
@@ -963,6 +1061,8 @@ function render() {
   if (currentView==="cuotas") renderCuotas();
   if (currentView==="historial") renderHistorial();
   if (currentView==="inversiones") renderInversiones();
+  if (currentView==="buscar") renderBuscar();
+  if (currentView==="presupuesto") renderPresupuesto();
 }
 
 
@@ -1044,7 +1144,28 @@ function renderDashboard() {
 
   renderBreakdown("breakdown-grande", grandes, tG, "grande");
   renderBreakdown("breakdown-hormiga", hormiga, tH, "hormiga");
+  renderTorta(gm);
+  renderProyeccion(gm);
   document.getElementById("dash-empty").classList.toggle("hidden", total>0);
+
+  // Alertas presupuesto en dashboard
+  const alertas = getAlertasPresupuesto();
+  let alertaHtml = document.getElementById("dash-alertas-presupuesto");
+  if (!alertaHtml) {
+    alertaHtml = document.createElement("div");
+    alertaHtml.id = "dash-alertas-presupuesto";
+    document.getElementById("dash-content").appendChild(alertaHtml);
+  }
+  if (alertas.length > 0) {
+    alertaHtml.innerHTML = alertas.map(p => {
+      const gastado = gm.filter(g=>g.categoria===p.categoria).reduce((s,g)=>s+g.monto,0);
+      const pct = Math.round(gastado/p.tope*100);
+      return `<div style="background:#2a1515;border:1px solid var(--red);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="setView('presupuesto')">
+        <div><div style="font-size:13px;font-weight:700;color:var(--hormiga-light)">⚠ ${escHtml(p.categoria)}</div><div style="font-size:11px;color:var(--muted)">${ars(gastado)} de ${ars(p.tope)}</div></div>
+        <div style="font-size:16px;font-weight:800;color:var(--red)">${pct}%</div>
+      </div>`;
+    }).join("");
+  } else { alertaHtml.innerHTML = ""; }
 
   // Próximos vencimientos en dashboard (solo pendientes, próximos 30 días)
   const proxVenc = vencimientos
@@ -1096,7 +1217,8 @@ function renderLista() {
     return `<div class="gasto-row" style="border-left-color:${color}">
       <div class="gasto-info">
         <span class="gasto-desc">${escHtml(g.descripcion)}</span>
-        <span class="gasto-cat">${escHtml(g.categoria)} · ${fecha}</span>
+        <span class="gasto-cat">${escHtml(g.categoria)} · ${fecha}${g.tag ? ` <span class="tag tag-${g.tag}">${g.tag}</span>` : ""}</span>
+        ${g.nota ? `<span style="font-size:11px;color:var(--dim)">📝 ${escHtml(g.nota)}</span>` : ""}
       </div>
       <div class="gasto-right">
         <span class="gasto-monto" style="color:${color}">${ars(g.monto)}</span>
@@ -1259,6 +1381,286 @@ function renderHistDetalle(idx) {
   document.getElementById("hist-detalle-body").innerHTML = html;
 }
 
+
+
+// ── BUSCADOR ──────────────────────────────────────────────
+let buscarQuery = "";
+
+window.limpiarBusqueda = () => {
+  document.getElementById("buscar-input").value = "";
+  buscarQuery = "";
+  document.getElementById("buscar-clear").style.display = "none";
+  renderBuscar();
+};
+
+function initBuscar() {
+  const input = document.getElementById("buscar-input");
+  if (!input || input.dataset.init) return;
+  input.dataset.init = "1";
+  input.addEventListener("input", e => {
+    buscarQuery = e.target.value.trim().toLowerCase();
+    document.getElementById("buscar-clear").style.display = buscarQuery ? "block" : "none";
+    renderBuscar();
+  });
+}
+
+function renderBuscar() {
+  initBuscar();
+  const container = document.getElementById("buscar-results");
+  if (!buscarQuery) {
+    container.innerHTML = '<div class="empty" style="padding-top:32px">Escribí para buscar en<br>todos tus gastos.</div>';
+    return;
+  }
+  const results = gastos.filter(g =>
+    g.descripcion?.toLowerCase().includes(buscarQuery) ||
+    g.categoria?.toLowerCase().includes(buscarQuery) ||
+    g.nota?.toLowerCase().includes(buscarQuery)
+  ).sort((a,b) => b.fecha.localeCompare(a.fecha));
+
+  if (results.length === 0) {
+    container.innerHTML = '<div class="empty">Sin resultados para<br>"' + escHtml(buscarQuery) + '"</div>';
+    return;
+  }
+  container.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0 8px">' + results.length + ' resultado' + (results.length!==1?"s":"") + '</div>' +
+    results.map(g => {
+      const color = g.tipo==="grande" ? "var(--grande)" : "var(--hormiga)";
+      const fecha = g.fecha.slice(8)+"/"+g.fecha.slice(5,7)+"/"+g.fecha.slice(0,4);
+      const tagHtml = g.tag ? `<span class="tag tag-${g.tag}">${g.tag}</span>` : "";
+      const notaHtml = g.nota ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">📝 ${escHtml(g.nota)}</div>` : "";
+      return `<div class="gasto-row" style="border-left-color:${color};flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+          <span style="font-size:14px;font-weight:700;color:#e0e7ff">${escHtml(g.descripcion)}</span>
+          <span style="font-size:15px;font-weight:800;color:${color}">${ars(g.monto)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--dim)">${escHtml(g.categoria)} · ${fecha} ${tagHtml}</div>
+        ${notaHtml}
+      </div>`;
+    }).join("");
+}
+
+// ── PRESUPUESTO ───────────────────────────────────────────
+const TODAS_CATS = [...new Set([...CATS_GRANDE, ...CATS_HORMIGA])];
+
+window.abrirSheetNuevoPresupuesto = () => {
+  abrirSheet(`
+    <h3>🎯 Nuevo presupuesto</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-group">
+        <label>Categoría</label>
+        <select class="input-sel" id="np-cat">
+          ${TODAS_CATS.map(c => `<option value="${c}">${c}</option>`).join("")}
+        </select>
+      </div>
+      <div class="form-group"><label>Tope mensual ($)</label><input type="number" id="np-tope" placeholder="ej: 50000" /></div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="guardarPresupuesto()">Guardar</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+};
+
+window.guardarPresupuesto = async () => {
+  const cat = document.getElementById("np-cat").value;
+  const tope = parseFloat(document.getElementById("np-tope").value.replace(",","."));
+  if (!cat || isNaN(tope) || tope <= 0) { showToast("Completá todos los campos","var(--red)"); return; }
+  const existente = presupuestos.find(p => p.categoria === cat);
+  try {
+    if (existente) {
+      await updateDoc(doc(db,"presupuestos",existente.id), { tope });
+    } else {
+      await addDoc(colPresupuestos, { categoria:cat, tope, timestamp:serverTimestamp() });
+    }
+    cerrarSheet(); showToast("Presupuesto guardado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.editarPresupuesto = (id) => {
+  const p = presupuestos.find(x => x.id === id);
+  if (!p) return;
+  abrirSheet(`
+    <h3>✏️ Editar presupuesto</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div style="font-size:15px;font-weight:700;color:var(--grande-light)">${escHtml(p.categoria)}</div>
+      <div class="form-group"><label>Tope mensual ($)</label><input type="number" id="ep-tope" value="${p.tope}" /></div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="actualizarPresupuesto('${id}')">Guardar</button>
+      <button class="btn-danger" onclick="eliminarPresupuesto('${id}')">Eliminar presupuesto</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+};
+window.actualizarPresupuesto = async (id) => {
+  const tope = parseFloat(document.getElementById("ep-tope").value.replace(",","."));
+  if (isNaN(tope) || tope <= 0) { showToast("Ingresá un tope válido","var(--red)"); return; }
+  try {
+    await updateDoc(doc(db,"presupuestos",id), { tope });
+    cerrarSheet(); showToast("Actualizado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+window.eliminarPresupuesto = (id) => {
+  pedirConfirm("¿Eliminás este presupuesto?", "", async () => {
+    await deleteDoc(doc(db,"presupuestos",id));
+    cerrarSheet(); showToast("Eliminado","var(--yellow)");
+  });
+};
+
+function renderPresupuesto() {
+  const container = document.getElementById("presupuesto-container");
+  const empty = document.getElementById("presupuesto-empty");
+  if (presupuestos.length === 0) {
+    container.innerHTML = ""; empty.classList.remove("hidden"); return;
+  }
+  empty.classList.add("hidden");
+  const gm = getGastosMes();
+
+  container.innerHTML = presupuestos.map(p => {
+    const gastado = gm.filter(g => g.categoria === p.categoria).reduce((s,g) => s+g.monto, 0);
+    const pct = Math.min((gastado / p.tope) * 100, 100);
+    const color = pct < 60 ? "var(--green)" : pct < 85 ? "var(--yellow)" : "var(--red)";
+    return `<div class="card" style="margin-bottom:10px;cursor:pointer" onclick="editarPresupuesto('${p.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:14px;font-weight:700">${escHtml(p.categoria)}</span>
+        <span style="font-size:12px;font-weight:700;color:${color}">${Math.round(pct)}%</span>
+      </div>
+      <div class="budget-bar-wrap" style="margin-bottom:6px">
+        <div class="budget-bar-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+        <span>Gastado: <strong style="color:${color}">${ars(gastado)}</strong></span>
+        <span>Tope: ${ars(p.tope)}</span>
+      </div>
+      ${pct >= 100 ? `<div style="font-size:11px;color:var(--red);font-weight:700;margin-top:6px">⚠ Tope superado por ${ars(gastado - p.tope)}</div>` : ""}
+    </div>`;
+  }).join("");
+}
+
+// ── PRESUPUESTO ALERTA EN DASHBOARD ───────────────────────
+function getAlertasPresupuesto() {
+  const gm = getGastosMes();
+  return presupuestos.filter(p => {
+    const gastado = gm.filter(g => g.categoria === p.categoria).reduce((s,g) => s+g.monto, 0);
+    return (gastado / p.tope) >= 0.85;
+  });
+}
+
+// ── TORTA ─────────────────────────────────────────────────
+function renderTorta(gm) {
+  const card = document.getElementById("dash-torta");
+  if (gm.length === 0) { card.style.display = "none"; return; }
+  card.style.display = "block";
+  const cats = {};
+  gm.forEach(g => { cats[g.categoria] = (cats[g.categoria]||0) + g.monto; });
+  const sorted = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const total = gm.reduce((s,g)=>s+g.monto,0);
+  const COLORS = ["#6366f1","#f43f5e","#22c55e","#f59e0b","#38bdf8","#a78bfa","#fb923c","#34d399","#f472b6","#60a5fa"];
+
+  const canvas = document.getElementById("donut-canvas");
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,110,110);
+  let startAngle = -Math.PI/2;
+  sorted.forEach(([cat, val], i) => {
+    const slice = (val/total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(55,55);
+    ctx.arc(55,55,50,startAngle,startAngle+slice);
+    ctx.closePath();
+    ctx.fillStyle = COLORS[i % COLORS.length];
+    ctx.fill();
+    startAngle += slice;
+  });
+  // Donut hole
+  ctx.beginPath();
+  ctx.arc(55,55,28,0,2*Math.PI);
+  ctx.fillStyle = "#16161f";
+  ctx.fill();
+
+  const legend = document.getElementById("donut-legend");
+  legend.innerHTML = sorted.slice(0,6).map(([cat,val],i) =>
+    `<div class="donut-legend-item">
+      <div class="donut-dot" style="background:${COLORS[i%COLORS.length]}"></div>
+      <span style="color:var(--muted)">${escHtml(cat)}</span>
+      <span style="margin-left:auto;font-weight:700;font-size:11px">${Math.round(val/total*100)}%</span>
+    </div>`
+  ).join("");
+}
+
+// ── PROYECCIÓN ─────────────────────────────────────────────
+function renderProyeccion(gm) {
+  const hoy = new Date();
+  const esMesActual = hoy.getMonth() === currentMes && hoy.getFullYear() === currentAnio;
+  const el = document.getElementById("dash-proyeccion");
+  if (!esMesActual || gm.length === 0) { el.style.display="none"; return; }
+  el.style.display = "block";
+
+  const diaActual = hoy.getDate();
+  const diasEnMes = new Date(currentAnio, currentMes+1, 0).getDate();
+  const totalHasta = gm.reduce((s,g)=>s+g.monto,0);
+  const proyectado = Math.round((totalHasta / diaActual) * diasEnMes);
+  const ing = getIngresoMes();
+  const diff = ing ? proyectado - ing.ars : null;
+
+  document.getElementById("proyeccion-body").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:13px;color:var(--muted)">Día ${diaActual} de ${diasEnMes}</span>
+      <span style="font-size:11px;color:var(--muted)">${Math.round(diaActual/diasEnMes*100)}% del mes</span>
+    </div>
+    <div style="font-size:24px;font-weight:800;color:#c4b5fd;margin-bottom:4px">${ars(proyectado)}</div>
+    <div style="font-size:12px;color:var(--muted)">Proyección al cierre del mes basada en tu ritmo actual</div>
+    ${diff !== null ? `<div style="font-size:12px;font-weight:700;margin-top:8px;color:${diff>0?"var(--red)":"var(--green)"}">
+      ${diff > 0 ? "⚠ Vas a exceder tu ingreso por " + ars(diff) : "✓ Vas a terminar el mes con " + ars(Math.abs(diff)) + " disponible"}
+    </div>` : ""}
+  `;
+}
+
+// ── NOTAS Y TAGS en edición de gastos ─────────────────────
+// Override de editarGasto para incluir nota y tag
+window.editarGasto = (id) => {
+  const g = gastos.find(x => x.id === id);
+  if (!g) return;
+  abrirSheet(`
+    <h3>✏️ Editar gasto</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-group"><label>Descripción</label><input type="text" id="eg-desc" value="${escHtml(g.descripcion)}" /></div>
+      <div class="form-group"><label>Monto ($)</label><input type="number" id="eg-monto" value="${g.monto}" /></div>
+      <div class="form-group"><label>Categoría</label><div class="cat-grid" id="eg-cat-grid"></div></div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="eg-fecha" value="${g.fecha}" /></div>
+      <div class="form-group"><label>Nota (opcional)</label><input type="text" id="eg-nota" placeholder="ej: cumpleaños de Juan" value="${escHtml(g.nota||"")}" /></div>
+      <div class="form-group">
+        <label>Etiqueta</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${["necesario","impulsivo","trabajo","otro"].map(t =>
+            `<button class="cat-chip ${g.tag===t?"active-grande":""}" data-tag="${t}" onclick="selTag(this,'${t}')">${t}</button>`
+          ).join("")}
+        </div>
+        <input type="hidden" id="eg-tag" value="${g.tag||""}" />
+      </div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionGasto('${id}','${g.tipo}')">Guardar cambios</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+  buildCatGrid("eg-cat-grid", g.tipo, g.categoria);
+};
+
+window.selTag = (btn, tag) => {
+  document.querySelectorAll("[data-tag]").forEach(b => b.classList.remove("active-grande"));
+  const current = document.getElementById("eg-tag").value;
+  if (current === tag) { document.getElementById("eg-tag").value = ""; }
+  else { btn.classList.add("active-grande"); document.getElementById("eg-tag").value = tag; }
+};
+
+window.guardarEdicionGasto = async (id, tipo) => {
+  const desc = document.getElementById("eg-desc").value.trim();
+  const monto = parseFloat(document.getElementById("eg-monto").value.replace(",","."));
+  const fecha = document.getElementById("eg-fecha").value;
+  const cat = document.getElementById("eg-cat-grid").dataset.selected;
+  const nota = document.getElementById("eg-nota")?.value.trim() || "";
+  const tag = document.getElementById("eg-tag")?.value || "";
+  if (!desc||isNaN(monto)||monto<=0||!cat||!fecha) { showToast("Completá todos los campos","var(--red)"); return; }
+  try {
+    await updateDoc(doc(db,"gastos",id), { descripcion:desc, monto, categoria:cat, fecha, nota, tag });
+    cerrarSheet(); showToast("Gasto actualizado ✓");
+  } catch { showToast("Error al guardar","var(--red)"); }
+};
+
+// ── NOTA Y TAG en lista de gastos ─────────────────────────
 
 // ── INVERSIONES ─────────────────────────────────────────────
 
@@ -1569,6 +1971,26 @@ document.getElementById("f-fecha").value = todayStr();
 document.getElementById("f-desc").addEventListener("keydown", e => { if(e.key==="Enter") agregarGasto(); });
 document.getElementById("f-monto").addEventListener("keydown", e => { if(e.key==="Enter") agregarGasto(); });
 buildCatGrid();
+
+window.selTagNuevo = (btn, tag) => {
+  const hidden = document.getElementById("f-tag");
+  const current = hidden.value;
+  document.querySelectorAll("[data-ntag]").forEach(b => b.classList.remove("active-grande","active-hormiga"));
+  if (current === tag) { hidden.value = ""; }
+  else { btn.classList.add("active-grande"); hidden.value = tag; }
+};
+
+// Service Worker para PWA
+if ("serviceWorker" in navigator) {
+  const swCode = `
+    self.addEventListener("install", e => self.skipWaiting());
+    self.addEventListener("activate", e => e.waitUntil(clients.claim()));
+    self.addEventListener("fetch", e => e.respondWith(fetch(e.request).catch(() => new Response(""))));
+  `;
+  const blob = new Blob([swCode], {type:"application/javascript"});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
 </script>
 </body>
 </html>
