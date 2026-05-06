@@ -508,28 +508,28 @@ onSnapshot(query(colGastos, orderBy("timestamp","desc")), snap => {
   gastos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   loaded.gastos = true; checkLoaded(); render();
   setSyncStatus("✓ Sincronizado", "var(--green)");
-}, () => setSyncStatus("⚠ Sin conexión","var(--yellow)"));
+}, () => { loaded.gastos = true; checkLoaded(); setSyncStatus("⚠ Sin conexión","var(--yellow)"); });
 
 onSnapshot(query(colVenc, orderBy("fecha","asc")), snap => {
   vencimientos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   loaded.venc = true; checkLoaded(); render();
-});
+}, () => { loaded.venc = true; checkLoaded(); });
 
 onSnapshot(query(colCuotas, orderBy("timestamp","desc")), snap => {
   cuotas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   loaded.cuotas = true; checkLoaded(); render();
-});
+}, () => { loaded.cuotas = true; checkLoaded(); });
 
 onSnapshot(query(colIngresos, orderBy("timestamp","desc")), snap => {
   ingresos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   loaded.ingresos = true; checkLoaded(); render();
-});
+}, () => { loaded.ingresos = true; checkLoaded(); });
 
 onSnapshot(query(colInversiones, orderBy("timestamp","desc")), snap => {
   inversiones = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   loaded.inversiones = true; checkLoaded(); render();
   fetchPreciosCripto();
-});
+}, () => { loaded.inversiones = true; checkLoaded(); });
 
 function checkLoaded() {
   if (Object.values(loaded).every(Boolean)) {
@@ -537,6 +537,12 @@ function checkLoaded() {
     document.getElementById("dash-content").classList.remove("hidden");
   }
 }
+
+// Timeout de seguridad: si en 4 segundos no cargó todo, mostramos igual
+setTimeout(() => {
+  Object.keys(loaded).forEach(k => { loaded[k] = true; });
+  checkLoaded();
+}, 4000);
 
 // ── DÓLAR BLUE ───────────────────────────────────────────────
 async function fetchDolar() {
