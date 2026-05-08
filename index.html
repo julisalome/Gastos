@@ -85,11 +85,6 @@
     .total-monto { font-size:32px; font-weight:800; color:#e0e7ff; }
     .total-sub { font-size:12px; color:var(--muted); margin-top:4px; }
 
-    /* CTA REGISTRAR GASTO */
-    .cta-registrar { width:100%; padding:18px 20px; border-radius:16px; border:none; background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%); color:#fff; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit; letter-spacing:.5px; box-shadow:0 8px 24px rgba(99,102,241,.35), 0 2px 8px rgba(79,70,229,.25); display:flex; align-items:center; justify-content:center; gap:10px; transition:transform .12s, box-shadow .12s; }
-    .cta-registrar:active { transform:translateY(1px); box-shadow:0 4px 12px rgba(99,102,241,.3); }
-    .cta-registrar .cta-plus { font-size:22px; line-height:1; font-weight:800; }
-
     /* DUO */
     .duo { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .tipo-card { background:var(--bg2); border-radius:14px; padding:14px 12px; border:1px solid; text-align:center; display:flex; flex-direction:column; gap:3px; }
@@ -199,11 +194,12 @@
     .btn-ghost { padding:13px 0; border-radius:10px; border:1px solid var(--border2); background:none; color:var(--muted); font-size:15px; cursor:pointer; font-family:inherit; width:100%; }
     .btn-sm { padding:8px 16px; border-radius:8px; border:none; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
 
-    .tipo-toggle { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .tipo-toggle { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
     .toggle-btn { padding:13px 0; border-radius:12px; border:2px solid transparent; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; font-family:inherit; }
     .toggle-off { background:var(--bg3); color:var(--dim); border-color:var(--border2); }
     .toggle-grande { background:var(--grande-bg); color:var(--grande-light); border-color:var(--grande); }
     .toggle-hormiga { background:var(--hormiga-bg); color:var(--hormiga-light); border-color:var(--hormiga); }
+    .toggle-medio { background:#1a2a1a; color:#86efac; border-color:#22c55e; }
 
     .empty { text-align:center; color:var(--dim); font-size:14px; padding:40px 0; line-height:1.8; }
     .section-header { display:flex; justify-content:space-between; align-items:center; }
@@ -212,6 +208,38 @@
 
     @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
     .divider { height:1px; background:var(--border); margin:4px 0; }
+
+
+
+    /* TARJETAS */
+    .tarjeta-card { border-radius:14px; padding:16px; border:1px solid var(--border2); margin-bottom:10px; cursor:pointer; transition:background .15s; }
+    .tarjeta-card:hover { background:#1e1e2a; }
+    .tarjeta-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+    .tarjeta-nombre { font-size:16px; font-weight:800; color:#e0e7ff; }
+    .tarjeta-periodo { font-size:11px; color:var(--muted); margin-top:2px; }
+    .tarjeta-total { font-size:22px; font-weight:800; text-align:right; }
+    .tarjeta-sub { font-size:11px; color:var(--muted); text-align:right; margin-top:2px; }
+    .pago-chip { display:inline-block; padding:3px 10px; border-radius:8px; font-size:11px; font-weight:700; }
+
+    /* METAS */
+    .meta-card { background:var(--bg2); border-radius:14px; padding:16px; border:1px solid var(--border); margin-bottom:10px; cursor:pointer; transition:background .15s; }
+    .meta-card:hover { background:#1e1e2a; }
+    .meta-nombre { font-size:15px; font-weight:800; color:#e0e7ff; margin-bottom:4px; }
+    .meta-monto { font-size:22px; font-weight:800; color:var(--grande-light); }
+    .meta-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+    .meta-aporte-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
+    .meta-aporte-row:last-child { border-bottom:none; }
+
+    /* CAMBIOS / BLOQUES USD */
+    .cambio-card { background:linear-gradient(135deg,#0d1a10 0%,#0a1520 100%); border-radius:14px; padding:16px; border:1px solid #1a3a20; }
+    .cambio-stat { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1a2a1a; }
+    .cambio-stat:last-child { border-bottom:none; }
+    .cambio-stat-label { font-size:12px; color:var(--muted); }
+    .cambio-stat-val { font-size:14px; font-weight:800; }
+    .cambio-row { background:var(--bg2); border-radius:12px; padding:13px 14px; border:1px solid var(--border); border-left:3px solid #22c55e; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; cursor:pointer; transition:background .15s; animation:fadeIn .2s ease; }
+    .cambio-row:hover { background:#1e1e2a; }
+    .cambio-row.inactivo { opacity:.5; border-left-color:var(--dim); }
+    .usd-equiv { font-size:10px; color:var(--muted); margin-top:1px; }
 
     /* BUSCADOR */
     .search-wrap { position:relative; }
@@ -305,13 +333,16 @@
 <nav>
   <button class="nav-btn active" data-view="dashboard" onclick="setView('dashboard')">📊 Resumen</button>
   <button class="nav-btn" data-view="lista" onclick="setView('lista')">📋 Gastos</button>
-  <button class="nav-btn" data-view="nuevo" onclick="setView('nuevo')" title="Nuevo gasto" style="font-size:16px;padding:12px 14px">➕</button>
+  <button class="nav-btn" data-view="nuevo" onclick="setView('nuevo')" style="display:none"></button>
   <button class="nav-btn" data-view="vencimientos" onclick="setView('vencimientos')">🗓 Venc.</button>
   <button class="nav-btn" data-view="cuotas" onclick="setView('cuotas')">💳 Cuotas</button>
   <button class="nav-btn" data-view="historial" onclick="setView('historial')">📈 Historial</button>
   <button class="nav-btn" data-view="inversiones" onclick="setView('inversiones')">💼 Inversiones</button>
   <button class="nav-btn" data-view="buscar" onclick="setView('buscar')">🔍 Buscar</button>
   <button class="nav-btn" data-view="presupuesto" onclick="setView('presupuesto')">🎯 Presupuesto</button>
+  <button class="nav-btn" data-view="cambios" onclick="setView('cambios')">💱 Cambios</button>
+  <button class="nav-btn" data-view="tarjetas" onclick="setView('tarjetas')">💳 Tarjetas</button>
+  <button class="nav-btn" data-view="metas" onclick="setView('metas')">🎯 Metas</button>
 </nav>
 
 <main>
@@ -321,16 +352,19 @@
     <div id="dash-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-text">Cargando...</div></div>
     <div id="dash-content" class="hidden" style="display:flex;flex-direction:column;gap:12px">
 
-      <!-- CTA principal -->
-      <button class="cta-registrar" onclick="setView('nuevo')">
-        <span class="cta-plus">+</span>
-        <span>Registrar gasto</span>
-      </button>
-
       <!-- Dólar blue -->
       <div class="dolar-row">
         <div><div class="dolar-label">💵 Dólar Blue — Venta</div><div class="dolar-time" id="dolar-time">Actualizando...</div></div>
         <div class="dolar-val" id="dolar-val">—</div>
+      </div>
+
+      <!-- Último bloque USD -->
+      <div id="cambio-dash-card" class="cambio-card" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:#86efac;text-transform:uppercase;letter-spacing:1px">💱 Último bloque vendido</div>
+          <button class="btn-add-sm" onclick="setView('cambios')">Ver todos</button>
+        </div>
+        <div id="cambio-dash-body"></div>
       </div>
 
       <!-- Balance ingreso -->
@@ -361,11 +395,16 @@
       </div>
 
       <!-- Duo -->
-      <div class="duo">
-        <div class="tipo-card" style="border-color:var(--grande)">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="tipo-card" style="border-color:var(--grande);">
           <div class="tipo-icon">🏠</div><div class="tipo-label">Grandes</div>
           <div class="tipo-monto" id="dash-grande" style="color:var(--grande)">$0</div>
           <div class="tipo-count" id="dash-grande-count">0 items</div>
+        </div>
+        <div class="tipo-card" style="border-color:#22c55e">
+          <div class="tipo-icon">⚖️</div><div class="tipo-label">Medio</div>
+          <div class="tipo-monto" id="dash-medio" style="color:#22c55e">$0</div>
+          <div class="tipo-count" id="dash-medio-count">0 items</div>
         </div>
         <div class="tipo-card" style="border-color:var(--hormiga)">
           <div class="tipo-icon">🐜</div><div class="tipo-label">Hormiga</div>
@@ -377,6 +416,7 @@
       <!-- Barra -->
       <div class="bar-wrap" id="dash-bar" style="display:none">
         <div class="bar-seg" id="bar-grande" style="background:var(--grande)"></div>
+        <div class="bar-seg" id="bar-medio" style="background:#22c55e"></div>
         <div class="bar-seg" id="bar-hormiga" style="background:var(--hormiga)"></div>
       </div>
 
@@ -405,6 +445,7 @@
       </div>
 
       <div id="breakdown-grande" class="breakdown hidden"></div>
+      <div id="breakdown-medio" class="breakdown hidden"></div>
       <div id="breakdown-hormiga" class="breakdown hidden"></div>
       <div id="dash-empty" class="empty hidden">Sin gastos este mes.<br>¡Registrá el primero!</div>
     </div>
@@ -424,23 +465,28 @@
   <div id="view-nuevo" class="section hidden">
     <div class="tipo-toggle">
       <button class="toggle-btn toggle-grande" id="btn-grande" onclick="setTipo('grande')">🏠 Grande</button>
+      <button class="toggle-btn toggle-off" id="btn-medio" onclick="setTipo('medio')">⚖️ Medio</button>
       <button class="toggle-btn toggle-off" id="btn-hormiga" onclick="setTipo('hormiga')">🐜 Hormiga</button>
-    </div>
-    <div class="form-group">
-      <label>Descripción</label>
-      <input type="text" id="f-desc" placeholder="ej: Expensas enero" autocomplete="off" />
     </div>
     <div class="form-group">
       <label>Monto ($)</label>
       <input type="number" id="f-monto" inputmode="decimal" placeholder="0" min="0" />
     </div>
     <div class="form-group">
-      <label>Categoría</label>
-      <div class="cat-grid" id="cat-grid"></div>
+      <label>Descripción</label>
+      <input type="text" id="f-desc" placeholder="ej: Expensas enero" autocomplete="off" />
     </div>
     <div class="form-group">
       <label>Fecha</label>
       <input type="date" id="f-fecha" />
+    </div>
+    <div class="form-group">
+      <label>Categoría</label>
+      <div class="cat-grid" id="cat-grid"></div>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center" id="cat-nueva-wrap">
+        <input type="text" id="cat-nueva-input" placeholder="+ Nueva categoría..." style="flex:1;padding:8px 12px;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;color:var(--text);font-size:13px;outline:none;font-family:inherit" />
+        <button onclick="agregarCatNueva()" style="padding:8px 14px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--grande-light);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">+ Agregar</button>
+      </div>
     </div>
     <div class="form-group">
       <label>Nota (opcional)</label>
@@ -455,6 +501,12 @@
         <button class="cat-chip" data-ntag="otro" onclick="selTagNuevo(this,'otro')">otro</button>
       </div>
       <input type="hidden" id="f-tag" value="" />
+    </div>
+    <div class="form-group">
+      <label>Medio de pago</label>
+      <select class="input-sel" id="f-pago" onchange="togglePagoTarjeta()">
+        <option value="efectivo">💵 Efectivo / Débito</option>
+      </select>
     </div>
     <button class="btn-primary" id="btn-agregar" onclick="agregarGasto()" style="background:var(--grande)">Registrar gasto</button>
   </div>
@@ -562,6 +614,36 @@
   </div>
 
 
+  <!-- ── CAMBIOS ── -->
+  <div id="view-cambios" class="section hidden">
+    <div class="section-header">
+      <h4>💱 Ventas de dólares</h4>
+      <button class="btn-add-sm" onclick="abrirSheetNuevoCambio()">+ Registrar venta</button>
+    </div>
+    <div id="cambios-resumen"></div>
+    <div id="cambios-container"></div>
+  </div>
+
+
+  <!-- ── TARJETAS ── -->
+  <div id="view-tarjetas" class="section hidden">
+    <div class="section-header">
+      <h4>💳 Tarjetas de crédito</h4>
+      <button class="btn-add-sm" onclick="abrirSheetNuevaTarjeta()">+ Agregar tarjeta</button>
+    </div>
+    <div id="tarjetas-container"></div>
+  </div>
+
+  <!-- ── METAS ── -->
+  <div id="view-metas" class="section hidden">
+    <div class="section-header">
+      <h4>🎯 Metas de ahorro</h4>
+      <button class="btn-add-sm" onclick="abrirSheetNuevaMeta()">+ Nueva meta</button>
+    </div>
+    <div id="metas-container"></div>
+  </div>
+
+
 </main>
 
 <script type="module">
@@ -588,15 +670,47 @@ const colCuotas = collection(db, "cuotas");
 const colIngresos = collection(db, "ingresos");
 const colInversiones = collection(db, "inversiones");
 const colPresupuestos = collection(db, "presupuestos");
+const colCambios = collection(db, "cambios");
+const colTarjetas = collection(db, "tarjetas");
+const colGastosTarjeta = collection(db, "gastosTarjeta");
+const colMetas = collection(db, "metas");
+const colAportes = collection(db, "aportes");
 
 // ── CONSTANTES ──────────────────────────────────────────────
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const MONTHS_SHORT = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-const CATS_GRANDE = ["Expensas","Tarjeta","Internet","Alquiler","Seguro","Cuota","Servicio","Otro"];
-const CATS_HORMIGA = ["Comida","Kiosco","Transporte","Café","Delivery","Farmacia","Varios"];
+const CATS_GRANDE_DEFAULT = ["Expensas","Tarjeta","Internet","Alquiler","Seguro","Cuota","Servicio","Otro"];
+const CATS_MEDIO_DEFAULT = ["Club","Supermercado","Ropa","Salud","Educación","Mascota","Otro"];
+const CATS_HORMIGA_DEFAULT = ["Comida","Kiosco","Transporte","Café","Delivery","Farmacia","Varios"];
+
+// Categorías personalizables — se guardan en localStorage
+let CATS_GRANDE = JSON.parse(localStorage.getItem("cats_grande") || JSON.stringify(CATS_GRANDE_DEFAULT));
+let CATS_MEDIO = JSON.parse(localStorage.getItem("cats_medio") || JSON.stringify(CATS_MEDIO_DEFAULT));
+let CATS_HORMIGA = JSON.parse(localStorage.getItem("cats_hormiga") || JSON.stringify(CATS_HORMIGA_DEFAULT));
+
+function saveCats() {
+  localStorage.setItem("cats_grande", JSON.stringify(CATS_GRANDE));
+  localStorage.setItem("cats_medio", JSON.stringify(CATS_MEDIO));
+  localStorage.setItem("cats_hormiga", JSON.stringify(CATS_HORMIGA));
+}
+
+window.agregarCatNueva = () => {
+  const input = document.getElementById("cat-nueva-input");
+  const nombre = input.value.trim();
+  if (!nombre) { showToast("Escribí el nombre de la categoría","var(--red)"); return; }
+  const cats = currentTipo === "grande" ? CATS_GRANDE : currentTipo === "medio" ? CATS_MEDIO : CATS_HORMIGA;
+  const normalizado = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+  if (cats.includes(normalizado)) { showToast("Esa categoría ya existe","var(--yellow)"); return; }
+  cats.push(normalizado);
+  saveCats();
+  selectedCat = normalizado;
+  input.value = "";
+  buildCatGrid();
+  showToast("Categoría agregada ✓");
+};
 
 // ── STATE ────────────────────────────────────────────────────
-let gastos = [], vencimientos = [], cuotas = [], ingresos = [], inversiones = [], presupuestos = [];
+let gastos = [], vencimientos = [], cuotas = [], ingresos = [], inversiones = [], presupuestos = [], cambios = [], tarjetas = [], gastosTarjeta = [], metas = [], aportes = [];
 let currentView = "dashboard";
 let currentTipo = "grande";
 let currentFilter = "todos";
@@ -604,7 +718,7 @@ let currentVencFilter = "pendientes";
 let currentMes = new Date().getMonth();
 let currentAnio = new Date().getFullYear();
 let selectedCat = "";
-let loaded = { gastos: false, venc: false, cuotas: false, ingresos: false, inversiones: false, presupuestos: false };
+let loaded = { gastos: false, venc: false, cuotas: false, ingresos: false, inversiones: false, presupuestos: false, cambios: false, tarjetas: false, gastosTarjeta: false, metas: false, aportes: false };
 let preciosCripto = {};
 let dolarBlue = null;
 let confirmCallback = null;
@@ -631,6 +745,32 @@ onSnapshot(query(colIngresos, orderBy("timestamp","desc")), snap => {
   ingresos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   loaded.ingresos = true; checkLoaded(); render();
 }, () => { loaded.ingresos = true; checkLoaded(); });
+
+onSnapshot(query(colTarjetas, orderBy("nombre","asc")), snap => {
+  tarjetas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  loaded.tarjetas = true; checkLoaded(); render();
+  actualizarSelectorPago();
+}, () => { loaded.tarjetas = true; checkLoaded(); });
+
+onSnapshot(query(colGastosTarjeta, orderBy("fecha","desc")), snap => {
+  gastosTarjeta = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  loaded.gastosTarjeta = true; checkLoaded(); render();
+}, () => { loaded.gastosTarjeta = true; checkLoaded(); });
+
+onSnapshot(query(colMetas, orderBy("timestamp","desc")), snap => {
+  metas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  loaded.metas = true; checkLoaded(); render();
+}, () => { loaded.metas = true; checkLoaded(); });
+
+onSnapshot(query(colAportes, orderBy("fecha","desc")), snap => {
+  aportes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  loaded.aportes = true; checkLoaded(); render();
+}, () => { loaded.aportes = true; checkLoaded(); });
+
+onSnapshot(query(colCambios, orderBy("fecha","desc")), snap => {
+  cambios = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  loaded.cambios = true; checkLoaded(); render();
+}, () => { loaded.cambios = true; checkLoaded(); });
 
 onSnapshot(query(colPresupuestos, orderBy("timestamp","desc")), snap => {
   presupuestos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -750,12 +890,12 @@ document.getElementById("overlay-confirm").addEventListener("click", e => {
 // ── NAVIGATION ───────────────────────────────────────────────
 window.setView = (v) => {
   currentView = v;
-  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial","inversiones","buscar","presupuesto"];
+  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial","inversiones","buscar","presupuesto","cambios","tarjetas","metas"];
   views.forEach(id => {
     document.getElementById("view-"+id).classList.toggle("hidden", id !== v);
     document.querySelector(`.nav-btn[data-view="${id}"]`)?.classList.toggle("active", id === v);
   });
-  if (v === "nuevo") setTimeout(() => document.getElementById("f-desc").focus(), 50);
+  if (v === "nuevo") setTimeout(() => document.getElementById("f-monto").focus(), 50);
   render();
 };
 
@@ -769,12 +909,25 @@ window.setVencFilter = (f) => {
   document.querySelectorAll("[data-vfilter]").forEach(c => c.classList.toggle("active", c.dataset.vfilter === f));
   renderVencimientos();
 };
+function actualizarSelectorPago() {
+  const sel = document.getElementById("f-pago");
+  if (!sel) return;
+  const val = sel.value;
+  sel.innerHTML = '<option value="efectivo">💵 Efectivo / Débito</option>' +
+    tarjetas.map(t => `<option value="${t.id}">${escHtml(t.nombre)}</option>`).join("");
+  if (val && [...sel.options].some(o => o.value === val)) sel.value = val;
+}
+window.togglePagoTarjeta = () => {};
+
 window.setTipo = (t) => {
   currentTipo = t; selectedCat = "";
   document.getElementById("btn-grande").className = "toggle-btn " + (t==="grande"?"toggle-grande":"toggle-off");
+  document.getElementById("btn-medio").className = "toggle-btn " + (t==="medio"?"toggle-medio":"toggle-off");
   document.getElementById("btn-hormiga").className = "toggle-btn " + (t==="hormiga"?"toggle-hormiga":"toggle-off");
-  document.getElementById("btn-agregar").style.background = t==="grande" ? "var(--grande)" : "var(--hormiga)";
-  document.getElementById("f-desc").placeholder = t==="grande" ? "ej: Expensas enero" : "ej: Medialunas en el bar";
+  const colors = { grande:"var(--grande)", medio:"#22c55e", hormiga:"var(--hormiga)" };
+  document.getElementById("btn-agregar").style.background = colors[t];
+  const placeholders = { grande:"ej: Expensas enero", medio:"ej: Cuota del club", hormiga:"ej: Medialunas en el bar" };
+  document.getElementById("f-desc").placeholder = placeholders[t];
   buildCatGrid();
 };
 
@@ -785,7 +938,8 @@ function buildCatGrid(containerId="cat-grid", tipo=null, selected=null) {
   const grid = document.getElementById(containerId);
   if (!grid) return;
   grid.innerHTML = "";
-  (t==="grande" ? CATS_GRANDE : CATS_HORMIGA).forEach(cat => {
+  const cats = t==="grande" ? CATS_GRANDE : t==="medio" ? CATS_MEDIO : CATS_HORMIGA;
+  cats.forEach(cat => {
     const btn = document.createElement("button");
     btn.className = "cat-chip" + (sel===cat ? " active-"+t : "");
     btn.textContent = cat;
@@ -811,15 +965,27 @@ window.agregarGasto = async () => {
   if (isNaN(monto)||monto<=0) { showToast("Ingresá un monto válido","var(--red)"); return; }
   if (!selectedCat) { showToast("Elegí una categoría","var(--red)"); return; }
   if (!fecha) { showToast("Elegí una fecha","var(--red)"); return; }
+  const medioPago = document.getElementById("f-pago")?.value || "efectivo";
+  const esTarjeta = medioPago !== "efectivo";
   const btn = document.getElementById("btn-agregar");
   btn.disabled = true; btn.textContent = "Guardando...";
   try {
-    await addDoc(colGastos, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, timestamp:serverTimestamp() });
+    const nota = document.getElementById("f-nota")?.value.trim() || "";
+    const tag = document.getElementById("f-tag")?.value || "";
+    if (esTarjeta) {
+      await addDoc(colGastosTarjeta, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, tarjetaId:medioPago, timestamp:serverTimestamp() });
+    } else {
+      await addDoc(colGastos, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, timestamp:serverTimestamp() });
+    }
     document.getElementById("f-desc").value = "";
     document.getElementById("f-monto").value = "";
+    if (document.getElementById("f-nota")) document.getElementById("f-nota").value = "";
+    if (document.getElementById("f-tag")) document.getElementById("f-tag").value = "";
+    document.querySelectorAll("[data-ntag]").forEach(b => b.classList.remove("active-grande","active-hormiga","active-medio"));
+    if (document.getElementById("f-pago")) document.getElementById("f-pago").value = "efectivo";
     selectedCat = ""; buildCatGrid();
-    document.getElementById("f-desc").focus();
-    showToast("Gasto registrado ✓");
+    document.getElementById("f-monto").focus();
+    showToast(esTarjeta ? "Gasto en tarjeta registrado ✓" : "Gasto registrado ✓");
   } catch { showToast("Error al guardar","var(--red)"); }
   btn.disabled = false; btn.textContent = "Registrar gasto";
 };
@@ -979,7 +1145,7 @@ window.guardarNuevaCuota = async () => {
 window.abrirSheetCuota = (id) => {
   const c = cuotas.find(x => x.id === id);
   if (!c) return;
-  const { cuotaActual, cuotasPagadas, cuotasRestantes, terminada } = calcCuota(c);
+  const { cuotaActual, cuotasRestantes, terminada } = calcCuota(c);
   abrirSheet(`
     <h3>${escHtml(c.descripcion)}</h3>
     <div style="margin-bottom:16px;font-size:13px;color:var(--muted)">${escHtml(c.tarjeta)} · ${terminada ? "Terminada" : `Pagadas ${cuotasPagadas} de ${c.totalCuotas} · En curso: cuota ${cuotaActual}`}</div>
@@ -1027,8 +1193,11 @@ function calcCuota(c) {
   const [y, m] = c.mesInicio.split("-").map(Number);
   const inicio = new Date(y, m-1, 1);
   const ahora = new Date(currentAnio, currentMes, 1);
+  // diffMeses: cuántos meses pasaron desde el inicio (0 = estamos en el mes de inicio)
   const diffMeses = (ahora.getFullYear()-inicio.getFullYear())*12 + (ahora.getMonth()-inicio.getMonth());
+  // cuotaEnCurso: la cuota que se está pagando este mes (1-based)
   const cuotaEnCurso = Math.min(Math.max(diffMeses+1, 1), c.totalCuotas+1);
+  // cuotasPagadas: las que ya pasaron (el mes actual NO cuenta como pagado)
   const cuotasPagadas = Math.min(Math.max(diffMeses, 0), c.totalCuotas);
   const cuotasRestantes = Math.max(c.totalCuotas - cuotasPagadas, 0);
   const terminada = cuotaEnCurso > c.totalCuotas;
@@ -1074,6 +1243,9 @@ function render() {
   if (currentView==="inversiones") renderInversiones();
   if (currentView==="buscar") renderBuscar();
   if (currentView==="presupuesto") renderPresupuesto();
+  if (currentView==="cambios") renderCambios();
+  if (currentView==="tarjetas") renderTarjetas();
+  if (currentView==="metas") renderMetas();
 }
 
 
@@ -1128,12 +1300,15 @@ function renderBalance() {
 // ── RENDER DASHBOARD ─────────────────────────────────────────
 function renderDashboard() {
   renderBalance();
+  renderCambiosDash();
   const gm = getGastosMes();
   const grandes = gm.filter(g => g.tipo==="grande");
+  const medio = gm.filter(g => g.tipo==="medio");
   const hormiga = gm.filter(g => g.tipo==="hormiga");
   const tG = grandes.reduce((s,g)=>s+g.monto,0);
+  const tM = medio.reduce((s,g)=>s+g.monto,0);
   const tH = hormiga.reduce((s,g)=>s+g.monto,0);
-  const total = tG + tH;
+  const total = tG + tM + tH;
   const pendientesTotal = vencimientos.filter(v=>!v.pagado).reduce((s,v)=>s+v.monto,0);
 
   document.getElementById("dash-label").textContent = `Total ${MONTHS[currentMes]} ${currentAnio}`;
@@ -1143,6 +1318,8 @@ function renderDashboard() {
     : "";
   document.getElementById("dash-grande").textContent = ars(tG);
   document.getElementById("dash-grande-count").textContent = grandes.length+" item"+(grandes.length!==1?"s":"");
+  const medioEl = document.getElementById("dash-medio");
+  if (medioEl) { medioEl.textContent = ars(tM); document.getElementById("dash-medio-count").textContent = medio.length+" item"+(medio.length!==1?"s":""); }
   document.getElementById("dash-hormiga").textContent = ars(tH);
   document.getElementById("dash-hormiga-count").textContent = hormiga.length+" item"+(hormiga.length!==1?"s":"");
 
@@ -1150,10 +1327,13 @@ function renderDashboard() {
   if (total > 0) {
     bar.style.display = "flex";
     document.getElementById("bar-grande").style.width = (tG/total*100)+"%";
+    const bm = document.getElementById("bar-medio");
+    if (bm) bm.style.width = (tM/total*100)+"%";
     document.getElementById("bar-hormiga").style.width = (tH/total*100)+"%";
   } else { bar.style.display = "none"; }
 
   renderBreakdown("breakdown-grande", grandes, tG, "grande");
+  renderBreakdown("breakdown-medio", medio, tM, "medio");
   renderBreakdown("breakdown-hormiga", hormiga, tH, "hormiga");
   renderTorta(gm);
   renderProyeccion(gm);
@@ -1201,9 +1381,9 @@ function renderBreakdown(id, arr, total, tipo) {
   const el = document.getElementById(id);
   if (arr.length===0) { el.classList.add("hidden"); return; }
   el.classList.remove("hidden");
-  const color = tipo==="grande" ? "var(--grande)" : "var(--hormiga)";
-  const icon = tipo==="grande" ? "🏠" : "🐜";
-  const label = tipo==="grande" ? "Grandes" : "Hormiga";
+  const color = tipo==="grande" ? "var(--grande)" : tipo==="medio" ? "#22c55e" : "var(--hormiga)";
+  const icon = tipo==="grande" ? "🏠" : tipo==="medio" ? "⚖️" : "🐜";
+  const label = tipo==="grande" ? "Grandes" : tipo==="medio" ? "Medio" : "Hormiga";
   let html = `<div class="breakdown-title">${icon} Desglose ${label}</div>`;
   porCategoria(arr).forEach(([cat, monto]) => {
     const pct = total > 0 ? (monto/total*100) : 0;
@@ -1223,8 +1403,10 @@ function renderLista() {
   gm.sort((a,b) => b.fecha.localeCompare(a.fecha));
   if (gm.length===0) { container.innerHTML = '<div class="empty">Sin gastos para mostrar.</div>'; return; }
   container.innerHTML = gm.map(g => {
-    const color = g.tipo==="grande" ? "var(--grande)" : "var(--hormiga)";
+    const color = g.tipo==="grande" ? "var(--grande)" : g.tipo==="medio" ? "#22c55e" : "var(--hormiga)";
     const fecha = g.fecha.slice(8)+"/"+g.fecha.slice(5,7);
+    const tcGasto = getTCParaGasto(g);
+    const usdEquiv = tcGasto ? (g.monto / tcGasto.tc) : null;
     return `<div class="gasto-row" style="border-left-color:${color}">
       <div class="gasto-info">
         <span class="gasto-desc">${escHtml(g.descripcion)}</span>
@@ -1232,7 +1414,10 @@ function renderLista() {
         ${g.nota ? `<span style="font-size:11px;color:var(--dim)">📝 ${escHtml(g.nota)}</span>` : ""}
       </div>
       <div class="gasto-right">
-        <span class="gasto-monto" style="color:${color}">${ars(g.monto)}</span>
+        <div style="text-align:right">
+          <span class="gasto-monto" style="color:${color}">${ars(g.monto)}</span>
+          ${usdEquiv !== null ? `<div class="usd-equiv">≈ USD ${usdEquiv.toFixed(2)}</div>` : ""}
+        </div>
         <button class="btn-icon edit" onclick="editarGasto('${g.id}')">✏️</button>
         <button class="btn-icon" onclick="eliminarGasto('${g.id}')">✕</button>
       </div>
@@ -1394,6 +1579,548 @@ function renderHistDetalle(idx) {
 
 
 
+
+
+// ── TARJETAS ──────────────────────────────────────────────
+
+function getPeriodoTarjeta(tarjeta) {
+  const hoy = new Date();
+  const diaCierre = tarjeta.diaCierre;
+  let fechaInicio, fechaFin;
+  if (hoy.getDate() > diaCierre) {
+    fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth(), diaCierre + 1);
+    fechaFin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, diaCierre);
+  } else {
+    fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, diaCierre + 1);
+    fechaFin = new Date(hoy.getFullYear(), hoy.getMonth(), diaCierre);
+  }
+  const mesVenc = fechaFin.getMonth() + 1;
+  const anioVenc = mesVenc > 11 ? fechaFin.getFullYear() + 1 : fechaFin.getFullYear();
+  const fechaVenc = new Date(anioVenc, mesVenc % 12, tarjeta.diaVenc);
+  return {
+    inicio: fechaInicio.toISOString().slice(0,10),
+    fin: fechaFin.toISOString().slice(0,10),
+    vencimiento: fechaVenc.toISOString().slice(0,10)
+  };
+}
+
+function getGastosTarjetaPeriodo(tarjetaId, periodo) {
+  return gastosTarjeta.filter(g => g.tarjetaId === tarjetaId && g.fecha >= periodo.inicio && g.fecha <= periodo.fin);
+}
+
+function getCuotasTarjeta(tarjetaId) {
+  const nombre = tarjetas.find(t => t.id === tarjetaId)?.nombre || "";
+  return cuotas.filter(c => c.tarjeta?.toLowerCase().includes(nombre.toLowerCase()));
+}
+
+window.abrirSheetNuevaTarjeta = () => {
+  abrirSheet(`
+    <h3>💳 Nueva tarjeta</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-group"><label>Nombre</label><input type="text" id="nt-nombre" placeholder="ej: Visa Provincia, Naranja X" /></div>
+      <div class="form-group">
+        <label>Color</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${["#6366f1","#f43f5e","#22c55e","#f59e0b","#38bdf8","#a78bfa","#fb923c"].map(col =>
+            '<button onclick="selColor(this,\''+col+'\'" data-color="'+col+'" style="width:32px;height:32px;border-radius:50%;background:'+col+';border:3px solid transparent;cursor:pointer"></button>'
+          ).join("")}
+        </div>
+        <input type="hidden" id="nt-color" value="#6366f1" />
+      </div>
+      <div class="form-group"><label>Día de cierre</label><input type="number" id="nt-cierre" placeholder="ej: 15" min="1" max="31" /></div>
+      <div class="form-group"><label>Día de vencimiento</label><input type="number" id="nt-venc" placeholder="ej: 10" min="1" max="31" /></div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="guardarNuevaTarjeta()">Guardar tarjeta</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+};
+
+window.selColor = (btn, color) => {
+  document.querySelectorAll("[data-color]").forEach(b => b.style.borderColor = "transparent");
+  btn.style.borderColor = "#fff";
+  const nt = document.getElementById("nt-color");
+  const et = document.getElementById("et-color");
+  if (nt) nt.value = color;
+  if (et) et.value = color;
+};
+
+window.guardarNuevaTarjeta = async () => {
+  const nombre = document.getElementById("nt-nombre").value.trim();
+  const color = document.getElementById("nt-color").value;
+  const diaCierre = parseInt(document.getElementById("nt-cierre").value);
+  const diaVenc = parseInt(document.getElementById("nt-venc").value);
+  if (!nombre||isNaN(diaCierre)||isNaN(diaVenc)) { showToast("Completá todos los campos","var(--red)"); return; }
+  try {
+    await addDoc(colTarjetas, { nombre, color, diaCierre, diaVenc, timestamp: serverTimestamp() });
+    cerrarSheet(); showToast("Tarjeta agregada ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.abrirSheetTarjeta = (id) => {
+  const t = tarjetas.find(x => x.id === id);
+  if (!t) return;
+  const periodo = getPeriodoTarjeta(t);
+  const gts = getGastosTarjetaPeriodo(id, periodo);
+  const totalGastos = gts.reduce((s,g) => s+g.monto, 0);
+  const totalCuotas = getCuotasTarjeta(id).filter(c => !calcCuota(c).terminada).reduce((s,c) => s+c.montoCuota, 0);
+  const totalFinal = totalGastos + totalCuotas;
+  const vl = periodo.vencimiento.slice(8)+"/"+periodo.vencimiento.slice(5,7);
+  const il = periodo.inicio.slice(8)+"/"+periodo.inicio.slice(5,7);
+  const fl = periodo.fin.slice(8)+"/"+periodo.fin.slice(5,7);
+  const gastosHtml = gts.map(g => '<div class="meta-aporte-row"><span>'+escHtml(g.descripcion)+'</span><span style="font-weight:700">'+ars(g.monto)+'</span></div>').join("");
+  abrirSheet('<h3 style="color:'+t.color+'">💳 '+escHtml(t.nombre)+'</h3>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Período: '+il+' → '+fl+' · Vence: '+vl+'</div>'
+    +'<div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border2);margin-bottom:16px">'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:var(--muted)">Gastos del período</span><span style="font-weight:700">'+ars(totalGastos)+'</span></div>'
+    +(totalCuotas > 0 ? '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:var(--muted)">Cuotas activas</span><span style="font-weight:700">'+ars(totalCuotas)+'</span></div>' : '')
+    +'<div style="display:flex;justify-content:space-between;border-top:1px solid var(--border2);padding-top:8px;margin-top:4px"><span style="font-size:13px;font-weight:700">Total estimado</span><span style="font-size:18px;font-weight:800;color:'+t.color+'">'+ars(totalFinal)+'</span></div>'
+    +'</div>'
+    +(gts.length > 0 ? '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Gastos del período</div>'+gastosHtml : '')
+    +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'
+    +'<button class="btn-primary" style="background:var(--grande)" onclick="editarTarjeta(\''+id+'\')">✏️ Editar tarjeta</button>'
+    +'<button class="btn-primary" style="background:#22c55e" onclick="generarVencimientoTarjeta(\''+id+'\')">📅 Generar vencimiento</button>'
+    +'<button class="btn-ghost" onclick="cerrarSheet()">Cerrar</button></div>');
+};
+
+window.editarTarjeta = (id) => {
+  const t = tarjetas.find(x => x.id === id);
+  if (!t) return;
+  cerrarSheet();
+  const colors = ["#6366f1","#f43f5e","#22c55e","#f59e0b","#38bdf8","#a78bfa","#fb923c"];
+  setTimeout(() => abrirSheet(
+    '<h3>✏️ Editar tarjeta</h3><div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">'
+    +'<div class="form-group"><label>Nombre</label><input type="text" id="et-nombre" value="'+escHtml(t.nombre)+'" /></div>'
+    +'<div class="form-group"><label>Color</label><div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +colors.map(col => '<button onclick="selColor(this,\''+col+'\'" data-color="'+col+'" style="width:32px;height:32px;border-radius:50%;background:'+col+';border:3px solid '+(col===t.color?"#fff":"transparent")+';cursor:pointer"></button>').join("")
+    +'</div><input type="hidden" id="et-color" value="'+t.color+'" /></div>'
+    +'<div class="form-group"><label>Día de cierre</label><input type="number" id="et-cierre" value="'+t.diaCierre+'" /></div>'
+    +'<div class="form-group"><label>Día de vencimiento</label><input type="number" id="et-venc" value="'+t.diaVenc+'" /></div>'
+    +'<button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionTarjeta(\''+id+'\')">Guardar</button>'
+    +'<button class="btn-danger" onclick="eliminarTarjeta(\''+id+'\')">Eliminar tarjeta</button>'
+    +'<button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button></div>'
+  ), 200);
+};
+
+window.guardarEdicionTarjeta = async (id) => {
+  const nombre = document.getElementById("et-nombre").value.trim();
+  const color = document.getElementById("et-color").value;
+  const diaCierre = parseInt(document.getElementById("et-cierre").value);
+  const diaVenc = parseInt(document.getElementById("et-venc").value);
+  if (!nombre||isNaN(diaCierre)||isNaN(diaVenc)) { showToast("Completá todos los campos","var(--red)"); return; }
+  try {
+    await updateDoc(doc(db,"tarjetas",id), { nombre, color, diaCierre, diaVenc });
+    cerrarSheet(); showToast("Actualizado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.eliminarTarjeta = (id) => {
+  pedirConfirm("¿Eliminás esta tarjeta?", "Los gastos registrados no se borran.", async () => {
+    await deleteDoc(doc(db,"tarjetas",id));
+    cerrarSheet(); showToast("Eliminado","var(--yellow)");
+  });
+};
+
+window.generarVencimientoTarjeta = async (id) => {
+  const t = tarjetas.find(x => x.id === id);
+  if (!t) return;
+  const periodo = getPeriodoTarjeta(t);
+  const gts = getGastosTarjetaPeriodo(id, periodo);
+  const totalGastos = gts.reduce((s,g) => s+g.monto, 0);
+  const totalCuotas = getCuotasTarjeta(id).filter(c => !calcCuota(c).terminada).reduce((s,c) => s+c.montoCuota, 0);
+  const total = totalGastos + totalCuotas;
+  try {
+    await addDoc(colVenc, {
+      descripcion: t.nombre+" — "+periodo.fin.slice(5,7)+"/"+periodo.fin.slice(0,4),
+      monto: total, fecha: periodo.vencimiento,
+      categoria: "Tarjeta", pagado: false,
+      tarjetaId: id, timestamp: serverTimestamp()
+    });
+    cerrarSheet(); showToast("Vencimiento generado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+function renderTarjetas() {
+  const container = document.getElementById("tarjetas-container");
+  if (tarjetas.length === 0) {
+    container.innerHTML = '<div class="empty">Sin tarjetas configuradas.<br>Usá "+ Agregar tarjeta" para empezar.</div>';
+    return;
+  }
+  container.innerHTML = tarjetas.map(t => {
+    const periodo = getPeriodoTarjeta(t);
+    const gts = getGastosTarjetaPeriodo(t.id, periodo);
+    const totalGastos = gts.reduce((s,g) => s+g.monto, 0);
+    const totalCuotas = getCuotasTarjeta(t.id).filter(c => !calcCuota(c).terminada).reduce((s,c) => s+c.montoCuota, 0);
+    const total = totalGastos + totalCuotas;
+    const il = periodo.inicio.slice(8)+"/"+periodo.inicio.slice(5,7);
+    const fl = periodo.fin.slice(8)+"/"+periodo.fin.slice(5,7);
+    const vl = periodo.vencimiento.slice(8)+"/"+periodo.vencimiento.slice(5,7);
+    return '<div class="tarjeta-card" style="background:linear-gradient(135deg,'+t.color+'22,'+t.color+'08);border-color:'+t.color+'44" onclick="abrirSheetTarjeta(\''+ t.id +'\')">'+
+      '<div class="tarjeta-header">'+
+      '<div><div class="tarjeta-nombre" style="color:'+t.color+'">'+escHtml(t.nombre)+'</div>'+
+      '<div class="tarjeta-periodo">'+il+' → '+fl+' · Vence '+vl+'</div></div>'+
+      '<div><div class="tarjeta-total" style="color:'+t.color+'">'+ars(total)+'</div>'+
+      '<div class="tarjeta-sub">'+gts.length+' gasto'+(gts.length!==1?"s":"")+(totalCuotas>0?" + cuotas":"")+'</div></div></div></div>';
+  }).join("");
+}
+
+// ── METAS ─────────────────────────────────────────────────
+
+window.abrirSheetNuevaMeta = () => {
+  abrirSheet('<h3>🎯 Nueva meta</h3><div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">'+
+    '<div class="form-group"><label>Nombre</label><input type="text" id="nm-nombre" placeholder="ej: Viaje a Brasil, MacBook..." /></div>'+
+    '<div class="form-group"><label>Monto objetivo ($)</label><input type="number" id="nm-monto" placeholder="0" inputmode="decimal" /></div>'+
+    '<div class="form-group"><label>Fecha objetivo</label><input type="date" id="nm-fecha" /></div>'+
+    '<div class="form-group"><label>Descripción (opcional)</label><input type="text" id="nm-desc" placeholder="ej: Vuelo + hotel 7 días" /></div>'+
+    '<button class="btn-primary" style="background:var(--grande)" onclick="guardarNuevaMeta()">Crear meta</button>'+
+    '<button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button></div>');
+};
+
+window.guardarNuevaMeta = async () => {
+  const nombre = document.getElementById("nm-nombre").value.trim();
+  const monto = parseFloat(document.getElementById("nm-monto").value.replace(",","."));
+  const fecha = document.getElementById("nm-fecha").value;
+  const desc = document.getElementById("nm-desc").value.trim();
+  if (!nombre||isNaN(monto)||monto<=0||!fecha) { showToast("Completá los campos obligatorios","var(--red)"); return; }
+  try {
+    await addDoc(colMetas, { nombre, monto, fecha, desc, timestamp: serverTimestamp() });
+    cerrarSheet(); showToast("Meta creada ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.abrirSheetMeta = (id) => {
+  const m = metas.find(x => x.id === id);
+  if (!m) return;
+  const aportesM = aportes.filter(a => a.metaId === id);
+  const totalAportado = aportesM.reduce((s,a) => s+a.monto, 0);
+  const falta = Math.max(m.monto - totalAportado, 0);
+  const pct = Math.min((totalAportado / m.monto) * 100, 100);
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const objetivo = new Date(m.fecha + "T00:00:00");
+  const diasRestantes = Math.ceil((objetivo - hoy) / 86400000);
+  const porMes = falta / Math.max(diasRestantes / 30, 1);
+  const aportesHtml = aportesM.map(a =>
+    '<div class="meta-aporte-row">'+
+    '<span style="color:var(--muted)">'+a.fecha.slice(8)+"/"+a.fecha.slice(5,7)+"/"+a.fecha.slice(0,4)+'</span>'+
+    '<div style="display:flex;align-items:center;gap:8px">'+
+    '<span style="font-weight:700;color:var(--grande-light)">'+ars(a.monto)+'</span>'+
+    '<button onclick="eliminarAporte(\''+ a.id +'\')" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px">✕</button>'+
+    '</div></div>'
+  ).join("");
+  abrirSheet('<h3>🎯 '+escHtml(m.nombre)+'</h3>'+
+    (m.desc ? '<div style="font-size:13px;color:var(--muted);margin-bottom:12px">'+escHtml(m.desc)+'</div>' : "")+
+    '<div style="background:var(--bg3);border-radius:10px;padding:14px;border:1px solid var(--border2);margin-bottom:16px">'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:10px">'+
+    '<span style="font-size:24px;font-weight:800;color:var(--grande-light)">'+ars(totalAportado)+'</span>'+
+    '<span style="font-size:13px;color:var(--muted);align-self:flex-end">de '+ars(m.monto)+'</span></div>'+
+    '<div class="health-bar-wrap" style="margin-bottom:8px"><div class="health-bar" style="width:'+pct+'%;background:var(--grande)"></div></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">'+
+    '<span>'+Math.round(pct)+'% completado</span><span>Faltan '+ars(falta)+'</span></div>'+
+    '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);display:flex;justify-content:space-between;font-size:12px">'+
+    '<span style="color:var(--muted)">'+( diasRestantes > 0 ? diasRestantes + " días restantes" : "¡Fecha alcanzada!" )+'</span>'+
+    '<span style="font-weight:700;color:var(--grande-light)">≈ '+ars(porMes)+'/mes</span></div></div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:16px">'+
+    '<input type="number" id="ap-monto" placeholder="Monto del aporte..." style="flex:1;padding:11px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;outline:none;font-family:inherit" />'+
+    '<button onclick="agregarAporte(\''+ id +'\')" style="padding:11px 16px;border-radius:10px;background:var(--grande);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">+ Aportar</button></div>'+
+    (aportesM.length > 0 ? '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Aportes</div>'+aportesHtml : "")+
+    '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+
+    '<button class="btn-primary" style="background:var(--grande)" onclick="editarMeta(\''+ id +'\')" >✏️ Editar meta</button>'+
+    '<button class="btn-danger" onclick="eliminarMeta(\''+ id +'\')" >Eliminar meta</button>'+
+    '<button class="btn-ghost" onclick="cerrarSheet()">Cerrar</button></div>');
+};
+
+window.agregarAporte = async (metaId) => {
+  const monto = parseFloat(document.getElementById("ap-monto").value.replace(",","."));
+  if (isNaN(monto)||monto<=0) { showToast("Ingresá un monto válido","var(--red)"); return; }
+  try {
+    await addDoc(colAportes, { metaId, monto, fecha: new Date().toISOString().slice(0,10), timestamp: serverTimestamp() });
+    document.getElementById("ap-monto").value = "";
+    showToast("Aporte registrado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.eliminarAporte = async (aporteId) => {
+  try {
+    await deleteDoc(doc(db,"aportes",aporteId));
+    showToast("Aporte eliminado","var(--yellow)");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.editarMeta = (id) => {
+  const m = metas.find(x => x.id === id);
+  if (!m) return;
+  cerrarSheet();
+  setTimeout(() => abrirSheet('<h3>✏️ Editar meta</h3><div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">'+
+    '<div class="form-group"><label>Nombre</label><input type="text" id="em-nombre" value="'+escHtml(m.nombre)+'" /></div>'+
+    '<div class="form-group"><label>Monto objetivo ($)</label><input type="number" id="em-monto" value="'+m.monto+'" /></div>'+
+    '<div class="form-group"><label>Fecha objetivo</label><input type="date" id="em-fecha" value="'+m.fecha+'" /></div>'+
+    '<div class="form-group"><label>Descripción</label><input type="text" id="em-desc" value="'+escHtml(m.desc||"")+'" /></div>'+
+    '<button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionMeta(\''+ id +'\')" >Guardar</button>'+
+    '<button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button></div>'), 200);
+};
+
+window.guardarEdicionMeta = async (id) => {
+  const nombre = document.getElementById("em-nombre").value.trim();
+  const monto = parseFloat(document.getElementById("em-monto").value.replace(",","."));
+  const fecha = document.getElementById("em-fecha").value;
+  const desc = document.getElementById("em-desc").value.trim();
+  if (!nombre||isNaN(monto)||!fecha) { showToast("Completá los campos","var(--red)"); return; }
+  try {
+    await updateDoc(doc(db,"metas",id), { nombre, monto, fecha, desc });
+    cerrarSheet(); showToast("Actualizado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.eliminarMeta = (id) => {
+  pedirConfirm("¿Eliminás esta meta?", "", async () => {
+    await deleteDoc(doc(db,"metas",id));
+    cerrarSheet(); showToast("Eliminado","var(--yellow)");
+  });
+};
+
+function renderMetas() {
+  const container = document.getElementById("metas-container");
+  if (metas.length === 0) {
+    container.innerHTML = '<div class="empty">Sin metas creadas.<br>Usá "+ Nueva meta" para empezar.</div>';
+    return;
+  }
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  container.innerHTML = metas.map(m => {
+    const aportesM = aportes.filter(a => a.metaId === m.id);
+    const totalAportado = aportesM.reduce((s,a) => s+a.monto, 0);
+    const pct = Math.min((totalAportado / m.monto) * 100, 100);
+    const objetivo = new Date(m.fecha + "T00:00:00");
+    const diasRestantes = Math.ceil((objetivo - hoy) / 86400000);
+    const falta = Math.max(m.monto - totalAportado, 0);
+    const porMes = falta / Math.max(diasRestantes / 30, 1);
+    const color = pct >= 100 ? "var(--green)" : diasRestantes < 30 ? "var(--yellow)" : "var(--grande)";
+    return '<div class="meta-card" onclick="abrirSheetMeta(\''+ m.id +'\')">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+      '<div><div class="meta-nombre">'+escHtml(m.nombre)+'</div>'+
+      (m.desc ? '<div style="font-size:11px;color:var(--muted)">'+escHtml(m.desc)+'</div>' : "")+'</div>'+
+      '<div style="text-align:right"><div class="meta-monto" style="color:'+color+'">'+ars(totalAportado)+'</div>'+
+      '<div class="meta-sub">de '+ars(m.monto)+'</div></div></div>'+
+      '<div class="health-bar-wrap" style="margin-bottom:6px"><div class="health-bar" style="width:'+pct+'%;background:'+color+'"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">'+
+      '<span>'+Math.round(pct)+'% · '+(diasRestantes > 0 ? diasRestantes+"d restantes" : "vencida")+'</span>'+
+      '<span style="font-weight:700;color:'+color+'">≈ '+ars(porMes)+'/mes</span></div></div>';
+  }).join("");
+}
+
+// ── CAMBIOS / BLOQUES USD ────────────────────────────────
+
+function getUltimoCambio() {
+  if (cambios.length === 0) return null;
+  return cambios.reduce((a, b) => a.fecha > b.fecha ? a : b);
+}
+
+function getGastosDesdeUltimoCambio() {
+  const uc = getUltimoCambio();
+  if (!uc) return [];
+  return gastos.filter(g => g.fecha >= uc.fecha);
+}
+
+function getTCParaGasto(g) {
+  // Busca el cambio activo en la fecha del gasto (el más reciente anterior o igual)
+  const candidatos = cambios.filter(c => c.fecha <= g.fecha);
+  if (candidatos.length === 0) return null;
+  return candidatos.reduce((a, b) => a.fecha > b.fecha ? a : b);
+}
+
+window.abrirSheetNuevoCambio = () => {
+  const hoy = new Date().toISOString().slice(0, 10);
+  abrirSheet(`
+    <h3>💱 Nueva venta de dólares</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-group">
+        <label>USD vendidos</label>
+        <input type="number" id="nc-usd" placeholder="ej: 300" inputmode="decimal" />
+      </div>
+      <div class="form-group">
+        <label>Tipo de cambio (ARS por USD)</label>
+        <input type="number" id="nc-tc" placeholder="${dolarBlue ? Math.round(dolarBlue) : 'ej: 1200'}" value="${dolarBlue ? Math.round(dolarBlue) : ''}" inputmode="decimal" />
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Blue hoy: ${dolarBlue ? ars(dolarBlue) : 'cargando...'}</div>
+      </div>
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="nc-fecha" value="${hoy}" />
+      </div>
+      <div class="form-group">
+        <label>Nota (opcional)</label>
+        <input type="text" id="nc-nota" placeholder="ej: Western Union, cripto P2P..." />
+      </div>
+      <div id="nc-preview" style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border2);display:none">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">OBTENÉS</div>
+        <div id="nc-preview-val" style="font-size:22px;font-weight:800;color:#86efac"></div>
+      </div>
+      <button class="btn-primary" style="background:#22c55e" onclick="guardarCambio()">Registrar venta</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+  // Preview en tiempo real
+  setTimeout(() => {
+    const usdEl = document.getElementById("nc-usd");
+    const tcEl = document.getElementById("nc-tc");
+    function updatePreview() {
+      const u = parseFloat(usdEl?.value || 0);
+      const t = parseFloat(tcEl?.value || 0);
+      const prev = document.getElementById("nc-preview");
+      if (u > 0 && t > 0 && prev) {
+        prev.style.display = "block";
+        document.getElementById("nc-preview-val").textContent = ars(u * t);
+      } else if (prev) { prev.style.display = "none"; }
+    }
+    usdEl?.addEventListener("input", updatePreview);
+    tcEl?.addEventListener("input", updatePreview);
+    updatePreview();
+  }, 100);
+};
+
+window.guardarCambio = async () => {
+  const usd = parseFloat(document.getElementById("nc-usd").value.replace(",","."));
+  const tc = parseFloat(document.getElementById("nc-tc").value.replace(",","."));
+  const fecha = document.getElementById("nc-fecha").value;
+  const nota = document.getElementById("nc-nota").value.trim();
+  if (isNaN(usd)||usd<=0) { showToast("Ingresá los USD vendidos","var(--red)"); return; }
+  if (isNaN(tc)||tc<=0) { showToast("Ingresá el tipo de cambio","var(--red)"); return; }
+  if (!fecha) { showToast("Elegí una fecha","var(--red)"); return; }
+  try {
+    await addDoc(colCambios, { usd, tc, arsObtenidos: usd*tc, fecha, nota, timestamp: serverTimestamp() });
+    cerrarSheet(); showToast("Venta registrada ✓");
+  } catch { showToast("Error al guardar","var(--red)"); }
+};
+
+window.abrirSheetCambio = (id) => {
+  const c = cambios.find(x => x.id === id);
+  if (!c) return;
+  const gastados = getGastosDesdeUltimoCambio();
+  const totalGastadoARS = gastados.reduce((s,g) => s+g.monto, 0);
+  const sobrante = c.arsObtenidos - (getUltimoCambio()?.id === id ? totalGastadoARS : 0);
+  abrirSheet(`
+    <h3>💱 Venta del ${c.fecha.slice(8)}/${c.fecha.slice(5,7)}/${c.fecha.slice(0,4)}</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-group"><label>USD vendidos</label><input type="number" id="ec-usd" value="${c.usd}" /></div>
+      <div class="form-group">
+        <label>Tipo de cambio</label>
+        <input type="number" id="ec-tc" value="${c.tc}" />
+        ${dolarBlue ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">Blue hoy: ${ars(dolarBlue)} · Vendiste a ${c.tc > dolarBlue ? '<span style="color:#86efac">+' + ars(c.tc - dolarBlue) + ' mejor</span>' : '<span style="color:var(--red)">-' + ars(dolarBlue - c.tc) + ' peor</span>'} que el blue</div>` : ""}
+      </div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="ec-fecha" value="${c.fecha}" /></div>
+      <div class="form-group"><label>Nota</label><input type="text" id="ec-nota" value="${escHtml(c.nota||"")}" /></div>
+      <button class="btn-primary" style="background:#22c55e" onclick="guardarEdicionCambio('${id}')">Guardar cambios</button>
+      <button class="btn-danger" onclick="eliminarCambio('${id}')">Eliminar</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+};
+
+window.guardarEdicionCambio = async (id) => {
+  const usd = parseFloat(document.getElementById("ec-usd").value.replace(",","."));
+  const tc = parseFloat(document.getElementById("ec-tc").value.replace(",","."));
+  const fecha = document.getElementById("ec-fecha").value;
+  const nota = document.getElementById("ec-nota").value.trim();
+  if (isNaN(usd)||usd<=0||isNaN(tc)||tc<=0||!fecha) { showToast("Completá todos los campos","var(--red)"); return; }
+  try {
+    await updateDoc(doc(db,"cambios",id), { usd, tc, arsObtenidos: usd*tc, fecha, nota });
+    cerrarSheet(); showToast("Actualizado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.eliminarCambio = (id) => {
+  pedirConfirm("¿Eliminás esta venta?", "", async () => {
+    await deleteDoc(doc(db,"cambios",id));
+    cerrarSheet(); showToast("Eliminado","var(--yellow)");
+  });
+};
+
+function renderCambiosDash() {
+  const card = document.getElementById("cambio-dash-card");
+  const body = document.getElementById("cambio-dash-body");
+  const uc = getUltimoCambio();
+  if (!uc) { card.style.display = "none"; return; }
+  card.style.display = "block";
+
+  const gastados = getGastosDesdeUltimoCambio();
+  const totalGastadoARS = gastados.reduce((s,g) => s+g.monto, 0);
+  const sobranteARS = uc.arsObtenidos - totalGastadoARS;
+  const sobranteUSD = sobranteARS / uc.tc;
+  const diffBlue = dolarBlue ? uc.tc - dolarBlue : null;
+  const diffHtml = diffBlue !== null
+    ? `<span style="font-size:11px;font-weight:700;color:${diffBlue>=0?"#86efac":"var(--red)"}">${diffBlue>=0?"▲ +":"▼ "}${ars(Math.abs(diffBlue))} vs blue</span>`
+    : "";
+
+  body.innerHTML = `
+    <div class="cambio-stat">
+      <span class="cambio-stat-label">Vendiste</span>
+      <span class="cambio-stat-val" style="color:#86efac">USD ${uc.usd} a ${ars(uc.tc)} ${diffHtml}</span>
+    </div>
+    <div class="cambio-stat">
+      <span class="cambio-stat-label">ARS obtenidos</span>
+      <span class="cambio-stat-val">${ars(uc.arsObtenidos)}</span>
+    </div>
+    <div class="cambio-stat">
+      <span class="cambio-stat-label">Gastado desde entonces</span>
+      <span class="cambio-stat-val" style="color:var(--red)">${ars(totalGastadoARS)} <span style="font-size:11px;color:var(--muted)">(${gastados.length} gastos)</span></span>
+    </div>
+    <div class="cambio-stat" style="margin-top:4px;padding-top:10px;border-top:1px solid #1a3a20">
+      <span class="cambio-stat-label" style="font-weight:700;color:#86efac">Disponible</span>
+      <div style="text-align:right">
+        <div class="cambio-stat-val" style="color:${sobranteARS>=0?"#86efac":"var(--red)"}">${ars(sobranteARS)}</div>
+        <div style="font-size:11px;color:var(--muted)">≈ USD ${sobranteUSD.toFixed(0)} al TC de compra</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCambios() {
+  const container = document.getElementById("cambios-container");
+  const resumen = document.getElementById("cambios-resumen");
+  const uc = getUltimoCambio();
+
+  if (cambios.length === 0) {
+    resumen.innerHTML = "";
+    container.innerHTML = '<div class="empty">Sin ventas registradas.<br>Usá "+ Registrar venta" para cargar una.</div>';
+    return;
+  }
+
+  // Resumen del bloque activo
+  if (uc) {
+    const gastados = getGastosDesdeUltimoCambio();
+    const totalGastadoARS = gastados.reduce((s,g) => s+g.monto, 0);
+    const sobranteARS = uc.arsObtenidos - totalGastadoARS;
+    const pct = Math.min((totalGastadoARS / uc.arsObtenidos) * 100, 100);
+    const color = pct < 60 ? "var(--green)" : pct < 85 ? "var(--yellow)" : "var(--red)";
+    resumen.innerHTML = `
+      <div class="cambio-card" style="margin-bottom:4px">
+        <div style="font-size:11px;font-weight:700;color:#86efac;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Bloque activo · ${uc.fecha.slice(8)}/${uc.fecha.slice(5,7)}</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;color:var(--muted)">USD ${uc.usd} a ${ars(uc.tc)}</span>
+          <span style="font-size:13px;font-weight:700">${ars(uc.arsObtenidos)}</span>
+        </div>
+        <div class="health-bar-wrap" style="margin-bottom:6px"><div class="health-bar" style="width:${pct}%;background:${color}"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px">
+          <span style="color:var(--muted)">Gastado: <strong style="color:${color}">${ars(totalGastadoARS)}</strong></span>
+          <span style="color:#86efac;font-weight:700">Disponible: ${ars(sobranteARS)}</span>
+        </div>
+      </div>`;
+  } else { resumen.innerHTML = ""; }
+
+  // Lista de todas las ventas
+  container.innerHTML = cambios.map((cam, i) => {
+    const esActivo = uc && cam.id === uc.id;
+    return `<div class="cambio-row ${esActivo?"":"inactivo"}" onclick="abrirSheetCambio('${cam.id}')">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#e0e7ff">USD ${cam.usd} <span style="font-size:12px;color:var(--muted)">@ ${ars(cam.tc)}</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${cam.fecha.slice(8)}/${cam.fecha.slice(5,7)}/${cam.fecha.slice(0,4)}${cam.nota?" · "+escHtml(cam.nota):""}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:800;color:#86efac">${ars(cam.arsObtenidos)}</div>
+        ${esActivo ? '<div style="font-size:10px;color:#86efac;font-weight:700">ACTIVO</div>' : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+
 // ── BUSCADOR ──────────────────────────────────────────────
 let buscarQuery = "";
 
@@ -1434,7 +2161,7 @@ function renderBuscar() {
   }
   container.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0 8px">' + results.length + ' resultado' + (results.length!==1?"s":"") + '</div>' +
     results.map(g => {
-      const color = g.tipo==="grande" ? "var(--grande)" : "var(--hormiga)";
+      const color = g.tipo==="grande" ? "var(--grande)" : g.tipo==="medio" ? "#22c55e" : "var(--hormiga)";
       const fecha = g.fecha.slice(8)+"/"+g.fecha.slice(5,7)+"/"+g.fecha.slice(0,4);
       const tagHtml = g.tag ? `<span class="tag tag-${g.tag}">${g.tag}</span>` : "";
       const notaHtml = g.nota ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">📝 ${escHtml(g.nota)}</div>` : "";
@@ -1450,7 +2177,7 @@ function renderBuscar() {
 }
 
 // ── PRESUPUESTO ───────────────────────────────────────────
-const TODAS_CATS = [...new Set([...CATS_GRANDE, ...CATS_HORMIGA])];
+const TODAS_CATS = [...new Set([...CATS_GRANDE, ...CATS_MEDIO, ...CATS_HORMIGA])];
 
 window.abrirSheetNuevoPresupuesto = () => {
   abrirSheet(`
@@ -1982,6 +2709,7 @@ document.getElementById("f-fecha").value = todayStr();
 document.getElementById("f-desc").addEventListener("keydown", e => { if(e.key==="Enter") agregarGasto(); });
 document.getElementById("f-monto").addEventListener("keydown", e => { if(e.key==="Enter") agregarGasto(); });
 buildCatGrid();
+actualizarSelectorPago();
 
 window.selTagNuevo = (btn, tag) => {
   const hidden = document.getElementById("f-tag");
