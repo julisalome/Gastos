@@ -352,6 +352,16 @@
     <div id="dash-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-text">Cargando...</div></div>
     <div id="dash-content" class="hidden" style="display:flex;flex-direction:column;gap:12px">
 
+      <!-- Botón registrar gasto -->
+      <button onclick="setView('nuevo')" style="width:100%;padding:17px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 24px rgba(99,102,241,.35);letter-spacing:.3px">
+        <span style="font-size:22px">➕</span> Registrar gasto
+      </button>
+
+      <!-- Botón secundario cambio USD -->
+      <button onclick="abrirSheetNuevoCambio()" style="width:100%;padding:11px;border-radius:12px;border:1px solid #1a3a20;background:#0d1a10;color:#86efac;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;">
+        💱 Registrar venta de dólares
+      </button>
+
       <!-- Dólar blue -->
       <div class="dolar-row">
         <div><div class="dolar-label">💵 Dólar Blue — Venta</div><div class="dolar-time" id="dolar-time">Actualizando...</div></div>
@@ -784,17 +794,18 @@ onSnapshot(query(colInversiones, orderBy("timestamp","desc")), snap => {
 }, () => { loaded.inversiones = true; checkLoaded(); });
 
 function checkLoaded() {
-  if (Object.values(loaded).every(Boolean)) {
+  // Mostrar apenas carguen los datos principales
+  if (loaded.gastos && loaded.venc && loaded.ingresos) {
     document.getElementById("dash-loading").classList.add("hidden");
     document.getElementById("dash-content").classList.remove("hidden");
   }
 }
 
-// Timeout de seguridad: si en 4 segundos no cargó todo, mostramos igual
+// Timeout de seguridad: si en 2 segundos no cargó todo, mostramos igual
 setTimeout(() => {
   Object.keys(loaded).forEach(k => { loaded[k] = true; });
   checkLoaded();
-}, 4000);
+}, 2000);
 
 // ── DÓLAR BLUE ───────────────────────────────────────────────
 async function fetchDolar() {
