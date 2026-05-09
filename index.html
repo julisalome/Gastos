@@ -3008,7 +3008,14 @@ const NAV_TABS_DEFAULT = [
   { id:"ingresos", emoji:"💰", label:"Ingresos" },
 ];
 
-let navOrder = JSON.parse(localStorage.getItem("nav_order") || JSON.stringify(NAV_TABS_DEFAULT.map(t => t.id)));
+let navOrder = (() => {
+  const saved = JSON.parse(localStorage.getItem("nav_order") || "null");
+  const allIds = NAV_TABS_DEFAULT.map(t => t.id);
+  if (!saved) return allIds;
+  // Agregar tabs nuevas que no estén en el orden guardado
+  const missing = allIds.filter(id => !saved.includes(id));
+  return [...saved, ...missing];
+})();
 
 function saveNavOrder() {
   localStorage.setItem("nav_order", JSON.stringify(navOrder));
