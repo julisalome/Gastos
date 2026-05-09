@@ -230,6 +230,15 @@
     .meta-aporte-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
     .meta-aporte-row:last-child { border-bottom:none; }
 
+
+    /* REORDENAR NAV */
+    .nav-order-item { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border2); margin-bottom:8px; cursor:grab; user-select:none; transition:background .15s; }
+    .nav-order-item:active { cursor:grabbing; background:#2a2a3a; }
+    .nav-order-item.dragging { opacity:.5; }
+    .nav-order-emoji { font-size:16px; width:24px; text-align:center; }
+    .nav-order-label { flex:1; font-size:14px; font-weight:600; color:var(--text); }
+    .nav-order-handle { color:var(--dim); font-size:18px; cursor:grab; }
+
     /* CAMBIOS / BLOQUES USD */
     .cambio-card { background:linear-gradient(135deg,#0d1a10 0%,#0a1520 100%); border-radius:14px; padding:16px; border:1px solid #1a3a20; }
     .cambio-stat { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #1a2a1a; }
@@ -343,6 +352,7 @@
   <button class="nav-btn" data-view="cambios" onclick="setView('cambios')">💱 Cambios</button>
   <button class="nav-btn" data-view="tarjetas" onclick="setView('tarjetas')">💳 Tarjetas</button>
   <button class="nav-btn" data-view="metas" onclick="setView('metas')">🎯 Metas</button>
+  <button class="nav-btn" onclick="abrirSheetOrdenarPestanas()" title="Ordenar pestañas">⚙️</button>
 </nav>
 
 <main>
@@ -1930,6 +1940,18 @@ function getGastosDesdeUltimoCambio() {
   return gastos.filter(g => g.fecha >= uc.fecha);
 }
 
+function getPrimerCambio() {
+  if (cambios.length === 0) return null;
+  return [...cambios].sort((a,b) => a.fecha.localeCompare(b.fecha))[0];
+}
+
+function getTodosLosGastosDesdeInicio() {
+  const pc = getPrimerCambio();
+  if (!pc) return [];
+  // Incluye gastos del mismo día del primer cambio
+  return gastos.filter(g => g.fecha >= pc.fecha);
+}
+
 function getTCParaGasto(g) {
   // Busca el cambio activo en la fecha del gasto (el más reciente anterior o igual)
   const candidatos = cambios.filter(c => c.fecha <= g.fecha);
@@ -2046,37 +2068,41 @@ window.eliminarCambio = (id) => {
 function renderCambiosDash() {
   const card = document.getElementById("cambio-dash-card");
   const body = document.getElementById("cambio-dash-body");
-  const uc = getUltimoCambio();
-  if (!uc) { card.style.display = "none"; return; }
+  if (cambios.length === 0) { card.style.display = "none"; return; }
   card.style.display = "block";
 
-  const gastados = getGastosDesdeUltimoCambio();
-  const totalGastadoARS = gastados.reduce((s,g) => s+g.monto, 0);
-  const sobranteARS = uc.arsObtenidos - totalGastadoARS;
-  const sobranteUSD = sobranteARS / uc.tc;
-  const diffBlue = dolarBlue ? uc.tc - dolarBlue : null;
+  // Fondo acumulado: TODOS los cambios - TODOS los gastos desde el primer cambio
+  const totalARSObtenidos = cambios.reduce((s,c) => s+c.arsObtenidos, 0);
+  const totalUSDVendidos = cambios.reduce((s,c) => s+c.usd, 0);
+  const gastadosDesdeInicio = getTodosLosGastosDesdeInicio();
+  const totalGastadoARS = gastadosDesdeInicio.reduce((s,g) => s+g.monto, 0);
+  const sobranteARS = totalARSObtenidos - totalGastadoARS;
+  const tcPromedio = totalUSDVendidos > 0 ? totalARSObtenidos / totalUSDVendidos : 1;
+  const sobranteUSD = sobranteARS / tcPromedio;
+  const uc = getUltimoCambio();
+  const diffBlue = dolarBlue && uc ? uc.tc - dolarBlue : null;
   const diffHtml = diffBlue !== null
     ? `<span style="font-size:11px;font-weight:700;color:${diffBlue>=0?"#86efac":"var(--red)"}">${diffBlue>=0?"▲ +":"▼ "}${ars(Math.abs(diffBlue))} vs blue</span>`
     : "";
 
   body.innerHTML = `
     <div class="cambio-stat">
-      <span class="cambio-stat-label">Vendiste</span>
-      <span class="cambio-stat-val" style="color:#86efac">USD ${uc.usd} a ${ars(uc.tc)} ${diffHtml}</span>
+      <span class="cambio-stat-label">Total vendido (${cambios.length} ${cambios.length===1?"venta":"ventas"})</span>
+      <span class="cambio-stat-val" style="color:#86efac">USD ${totalUSDVendidos} ${diffHtml}</span>
     </div>
     <div class="cambio-stat">
-      <span class="cambio-stat-label">ARS obtenidos</span>
-      <span class="cambio-stat-val">${ars(uc.arsObtenidos)}</span>
+      <span class="cambio-stat-label">ARS obtenidos (acumulado)</span>
+      <span class="cambio-stat-val">${ars(totalARSObtenidos)}</span>
     </div>
     <div class="cambio-stat">
-      <span class="cambio-stat-label">Gastado desde entonces</span>
-      <span class="cambio-stat-val" style="color:var(--red)">${ars(totalGastadoARS)} <span style="font-size:11px;color:var(--muted)">(${gastados.length} gastos)</span></span>
+      <span class="cambio-stat-label">Gastado total</span>
+      <span class="cambio-stat-val" style="color:var(--red)">${ars(totalGastadoARS)} <span style="font-size:11px;color:var(--muted)">(${gastadosDesdeInicio.length} gastos)</span></span>
     </div>
     <div class="cambio-stat" style="margin-top:4px;padding-top:10px;border-top:1px solid #1a3a20">
       <span class="cambio-stat-label" style="font-weight:700;color:#86efac">Disponible</span>
       <div style="text-align:right">
         <div class="cambio-stat-val" style="color:${sobranteARS>=0?"#86efac":"var(--red)"}">${ars(sobranteARS)}</div>
-        <div style="font-size:11px;color:var(--muted)">≈ USD ${sobranteUSD.toFixed(0)} al TC de compra</div>
+        <div style="font-size:11px;color:var(--muted)">≈ USD ${sobranteUSD.toFixed(0)} (TC prom. ${ars(Math.round(tcPromedio))})</div>
       </div>
     </div>
   `;
@@ -2085,7 +2111,6 @@ function renderCambiosDash() {
 function renderCambios() {
   const container = document.getElementById("cambios-container");
   const resumen = document.getElementById("cambios-resumen");
-  const uc = getUltimoCambio();
 
   if (cambios.length === 0) {
     resumen.innerHTML = "";
@@ -2093,39 +2118,40 @@ function renderCambios() {
     return;
   }
 
-  // Resumen del bloque activo
-  if (uc) {
-    const gastados = getGastosDesdeUltimoCambio();
-    const totalGastadoARS = gastados.reduce((s,g) => s+g.monto, 0);
-    const sobranteARS = uc.arsObtenidos - totalGastadoARS;
-    const pct = Math.min((totalGastadoARS / uc.arsObtenidos) * 100, 100);
-    const color = pct < 60 ? "var(--green)" : pct < 85 ? "var(--yellow)" : "var(--red)";
-    resumen.innerHTML = `
-      <div class="cambio-card" style="margin-bottom:4px">
-        <div style="font-size:11px;font-weight:700;color:#86efac;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Bloque activo · ${uc.fecha.slice(8)}/${uc.fecha.slice(5,7)}</div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:13px;color:var(--muted)">USD ${uc.usd} a ${ars(uc.tc)}</span>
-          <span style="font-size:13px;font-weight:700">${ars(uc.arsObtenidos)}</span>
-        </div>
-        <div class="health-bar-wrap" style="margin-bottom:6px"><div class="health-bar" style="width:${pct}%;background:${color}"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px">
-          <span style="color:var(--muted)">Gastado: <strong style="color:${color}">${ars(totalGastadoARS)}</strong></span>
-          <span style="color:#86efac;font-weight:700">Disponible: ${ars(sobranteARS)}</span>
-        </div>
-      </div>`;
-  } else { resumen.innerHTML = ""; }
+  // Resumen acumulado
+  const totalARSObtenidos = cambios.reduce((s,c) => s+c.arsObtenidos, 0);
+  const totalUSDVendidos = cambios.reduce((s,c) => s+c.usd, 0);
+  const gastadosDesdeInicio = getTodosLosGastosDesdeInicio();
+  const totalGastadoARS = gastadosDesdeInicio.reduce((s,g) => s+g.monto, 0);
+  const sobranteARS = totalARSObtenidos - totalGastadoARS;
+  const pct = Math.min((totalGastadoARS / totalARSObtenidos) * 100, 100);
+  const color = pct < 60 ? "var(--green)" : pct < 85 ? "var(--yellow)" : "var(--red)";
 
-  // Lista de todas las ventas
-  container.innerHTML = cambios.map((cam, i) => {
-    const esActivo = uc && cam.id === uc.id;
-    return `<div class="cambio-row ${esActivo?"":"inactivo"}" onclick="abrirSheetCambio('${cam.id}')">
-      <div>
+  resumen.innerHTML = `
+    <div class="cambio-card" style="margin-bottom:4px">
+      <div style="font-size:11px;font-weight:700;color:#86efac;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Fondo acumulado · ${cambios.length} ${cambios.length===1?"venta":"ventas"}</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px;color:var(--muted)">USD ${totalUSDVendidos} vendidos</span>
+        <span style="font-size:13px;font-weight:700">${ars(totalARSObtenidos)}</span>
+      </div>
+      <div class="health-bar-wrap" style="margin-bottom:6px"><div class="health-bar" style="width:${pct}%;background:${color}"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--muted)">Gastado: <strong style="color:${color}">${ars(totalGastadoARS)}</strong></span>
+        <span style="color:#86efac;font-weight:700">Disponible: ${ars(sobranteARS)}</span>
+      </div>
+    </div>`;
+
+  // Lista de ventas ordenadas por fecha DESC, todas editables
+  const ordenados = [...cambios].sort((a,b) => b.fecha.localeCompare(a.fecha));
+  container.innerHTML = ordenados.map(cam => {
+    return `<div class="cambio-row" style="border-left-color:#22c55e;margin-bottom:8px" onclick="abrirSheetCambio('${cam.id}')">
+      <div style="flex:1;min-width:0">
         <div style="font-size:14px;font-weight:700;color:#e0e7ff">USD ${cam.usd} <span style="font-size:12px;color:var(--muted)">@ ${ars(cam.tc)}</span></div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">${cam.fecha.slice(8)}/${cam.fecha.slice(5,7)}/${cam.fecha.slice(0,4)}${cam.nota?" · "+escHtml(cam.nota):""}</div>
       </div>
-      <div style="text-align:right">
+      <div style="text-align:right;flex-shrink:0">
         <div style="font-size:14px;font-weight:800;color:#86efac">${ars(cam.arsObtenidos)}</div>
-        ${esActivo ? '<div style="font-size:10px;color:#86efac;font-weight:700">ACTIVO</div>' : ""}
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">✏️ editar</div>
       </div>
     </div>`;
   }).join("");
@@ -2706,6 +2732,107 @@ function renderInversiones() {
   container.innerHTML = html;
 }
 
+
+// ── REORDENAR PESTAÑAS ────────────────────────────────────
+
+const NAV_TABS_DEFAULT = [
+  { id:"dashboard", emoji:"📊", label:"Resumen" },
+  { id:"lista", emoji:"📋", label:"Gastos" },
+  { id:"vencimientos", emoji:"🗓", label:"Venc." },
+  { id:"cuotas", emoji:"💳", label:"Cuotas" },
+  { id:"historial", emoji:"📈", label:"Historial" },
+  { id:"inversiones", emoji:"💼", label:"Inversiones" },
+  { id:"buscar", emoji:"🔍", label:"Buscar" },
+  { id:"presupuesto", emoji:"🎯", label:"Presupuesto" },
+  { id:"cambios", emoji:"💱", label:"Cambios" },
+  { id:"tarjetas", emoji:"💳", label:"Tarjetas" },
+  { id:"metas", emoji:"🎯", label:"Metas" },
+];
+
+let navOrder = JSON.parse(localStorage.getItem("nav_order") || JSON.stringify(NAV_TABS_DEFAULT.map(t => t.id)));
+
+function saveNavOrder() {
+  localStorage.setItem("nav_order", JSON.stringify(navOrder));
+}
+
+function applyNavOrder() {
+  const nav = document.querySelector("nav");
+  const configBtn = nav.querySelector('[onclick="abrirSheetOrdenarPestanas()"]');
+  // Reordenar botones según navOrder
+  navOrder.forEach(tabId => {
+    const btn = nav.querySelector(`[data-view="${tabId}"]`);
+    if (btn) nav.insertBefore(btn, configBtn);
+  });
+}
+
+window.abrirSheetOrdenarPestanas = () => {
+  const tabs = navOrder.map(id => NAV_TABS_DEFAULT.find(t => t.id === id)).filter(Boolean);
+  const itemsHtml = tabs.map((t, i) =>
+    `<div class="nav-order-item" draggable="true" data-tabid="${t.id}" data-idx="${i}"
+      ondragstart="navDragStart(event)"
+      ondragover="navDragOver(event)"
+      ondrop="navDrop(event)"
+      ondragend="navDragEnd(event)">
+      <span class="nav-order-emoji">${t.emoji}</span>
+      <span class="nav-order-label">${t.label}</span>
+      <span class="nav-order-handle">⠿</span>
+    </div>`
+  ).join("");
+  abrirSheet(`
+    <h3>⚙️ Ordenar pestañas</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Arrastrá para cambiar el orden</div>
+    <div id="nav-order-list">${itemsHtml}</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+      <button class="btn-primary" style="background:var(--grande)" onclick="guardarOrdenPestanas()">Guardar orden</button>
+      <button class="btn-ghost" onclick="resetOrdenPestanas()">Restablecer orden original</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+};
+
+let dragSrcEl = null;
+window.navDragStart = (e) => {
+  dragSrcEl = e.currentTarget;
+  dragSrcEl.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+};
+window.navDragOver = (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  const target = e.currentTarget;
+  if (target !== dragSrcEl) {
+    const list = document.getElementById("nav-order-list");
+    const items = [...list.querySelectorAll(".nav-order-item")];
+    const srcIdx = items.indexOf(dragSrcEl);
+    const tgtIdx = items.indexOf(target);
+    if (srcIdx < tgtIdx) list.insertBefore(dragSrcEl, target.nextSibling);
+    else list.insertBefore(dragSrcEl, target);
+  }
+};
+window.navDrop = (e) => { e.preventDefault(); };
+window.navDragEnd = (e) => {
+  dragSrcEl?.classList.remove("dragging");
+  dragSrcEl = null;
+};
+
+window.guardarOrdenPestanas = () => {
+  const items = document.querySelectorAll("#nav-order-list .nav-order-item");
+  navOrder = [...items].map(el => el.dataset.tabid);
+  saveNavOrder();
+  applyNavOrder();
+  cerrarSheet();
+  showToast("Orden guardado ✓");
+};
+
+window.resetOrdenPestanas = () => {
+  navOrder = NAV_TABS_DEFAULT.map(t => t.id);
+  saveNavOrder();
+  applyNavOrder();
+  cerrarSheet();
+  showToast("Orden restablecido");
+};
+
+
 // ── INIT ─────────────────────────────────────────────────────
 const anioActual = new Date().getFullYear();
 const selMes = document.getElementById("sel-mes");
@@ -2721,6 +2848,7 @@ document.getElementById("f-desc").addEventListener("keydown", e => { if(e.key===
 document.getElementById("f-monto").addEventListener("keydown", e => { if(e.key==="Enter") agregarGasto(); });
 buildCatGrid();
 actualizarSelectorPago();
+applyNavOrder();
 
 window.selTagNuevo = (btn, tag) => {
   const hidden = document.getElementById("f-tag");
