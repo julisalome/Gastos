@@ -2187,13 +2187,11 @@ Consumido: ${Math.round((total/ing.ars)*100)}%
 Disponible: ${ars(ing.ars - total)}` : "⚠ Sin ingreso cargado este mes"}
 
 ${pendientes.length > 0 ? `🗓 VENCIMIENTOS PENDIENTES (${pendientes.length})
-${pendientes.slice(0,5).map(v=>`• ${v.descripcion}: ${ars(v.monto)} — vence ${v.fecha.slice(8)}/${v.fecha.slice(5,7)}`).join("
-")}
+${pendientes.slice(0,5).map(v=>`• ${v.descripcion}: ${ars(v.monto)} — vence ${v.fecha.slice(8)}/${v.fecha.slice(5,7)}`).join("\n")}
 Total pendiente: ${ars(totalPendientes)}` : "✓ Sin vencimientos pendientes"}
 
 ${recPendientes.length > 0 ? `🔄 RECURRENTES SIN REGISTRAR (${recPendientes.length})
-${recPendientes.map(r=>`• ${r.descripcion}: ~${ars(r.ultimoMonto)}`).join("
-")}` : ""}
+${recPendientes.map(r=>`• ${r.descripcion}: ~${ars(r.ultimoMonto)}`).join("\n")}` : ""}
 
 ---
 Enviado desde CAJA 💸`;
