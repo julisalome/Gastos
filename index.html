@@ -232,6 +232,26 @@
 
 
 
+
+    /* COMPROBANTE */
+    .comprobante-preview { width:100%; max-height:200px; object-fit:cover; border-radius:10px; border:1px solid var(--border2); margin-top:8px; cursor:pointer; }
+    .comprobante-thumb { width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid var(--border2); cursor:pointer; flex-shrink:0; }
+    .upload-btn { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--bg3); border:1px dashed var(--border2); border-radius:10px; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; width:100%; justify-content:center; transition:all .15s; }
+    .upload-btn:hover { border-color:var(--grande); color:var(--grande-light); }
+    .upload-progress { height:4px; background:var(--border2); border-radius:4px; overflow:hidden; margin-top:6px; display:none; }
+    .upload-progress-fill { height:100%; background:var(--grande); border-radius:4px; transition:width .3s; width:0%; }
+
+    /* RECURRENTES */
+    .recurrente-row { background:var(--bg2); border-radius:12px; padding:13px 14px; border:1px solid var(--border); border-left:3px solid var(--grande-light); display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; cursor:pointer; transition:background .15s; }
+    .recurrente-row:hover { background:#1e1e2a; }
+    .recurrente-pendiente { border-left-color:var(--yellow); }
+
+    /* MODAL IMAGEN FULLSCREEN */
+    #img-fullscreen { display:none; position:fixed; inset:0; background:rgba(0,0,0,.95); z-index:9999; align-items:center; justify-content:center; padding:20px; }
+    #img-fullscreen.show { display:flex; }
+    #img-fullscreen img { max-width:100%; max-height:90vh; border-radius:12px; object-fit:contain; }
+    #img-fullscreen-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.15); border:none; color:#fff; font-size:24px; width:44px; height:44px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
     /* WIDGETS DASHBOARD */
     .widget { position:relative; transition:opacity .2s; }
     .widget.dragging { opacity:.4; }
@@ -357,6 +377,12 @@
 <body>
 
 <div id="sync-status"></div>
+<div id="img-fullscreen" onclick="cerrarImgFullscreen()">
+  <button id="img-fullscreen-close" onclick="cerrarImgFullscreen()">✕</button>
+  <img id="img-fullscreen-src" src="" alt="Comprobante" />
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init("HXcgufEGM08DU8TMu");</script>
 <div id="toast"></div>
 
 <!-- Confirm modal -->
@@ -403,6 +429,7 @@
   <button class="nav-btn" data-view="tarjetas" onclick="setView('tarjetas')">💳 Tarjetas</button>
   <button class="nav-btn" data-view="metas" onclick="setView('metas')">🎯 Metas</button>
   <button class="nav-btn" data-view="ingresos" onclick="setView('ingresos')">💰 Ingresos</button>
+  <button class="nav-btn" data-view="recurrentes" onclick="setView('recurrentes')">🔄 Recurrentes</button>
   <button class="nav-btn" onclick="abrirSheetOrdenarPestanas()" title="Ordenar pestañas">⚙️</button>
 </nav>
 
@@ -462,7 +489,7 @@
               </div>
               <div class="health-bar-wrap"><div class="health-bar" id="health-bar"></div></div>
             </div>
-            <button class="btn-add-sm" style="margin-top:10px;width:100%" onclick="abrirSheetIngreso()">✏️ Editar ingreso</button>
+            <button class="btn-add-sm" style="margin-top:10px;width:100%" onclick="abrirSheetIngreso()">+ Agregar otro ingreso</button>
           </div>
         </div>
       </div>
@@ -617,6 +644,22 @@
         <option value="efectivo">💵 Efectivo / Débito</option>
       </select>
     </div>
+    <div class="form-group">
+      <label>📷 Comprobante (opcional)</label>
+      <input type="file" id="f-foto" accept="image/*" capture="environment" style="display:none" onchange="previewFoto(this)" />
+      <button class="upload-btn" onclick="document.getElementById('f-foto').click()">
+        📷 Sacar foto o elegir imagen
+      </button>
+      <div class="upload-progress" id="upload-progress"><div class="upload-progress-fill" id="upload-fill"></div></div>
+      <img id="foto-preview" class="comprobante-preview" style="display:none" alt="Preview" onclick="abrirImgFullscreen(this.src)" />
+      <input type="hidden" id="f-foto-url" value="" />
+    </div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="f-recurrente" style="width:16px;height:16px;accent-color:var(--grande)" />
+        Guardar como gasto recurrente
+      </label>
+    </div>
     <button class="btn-primary" id="btn-agregar" onclick="agregarGasto()" style="background:var(--grande)">Registrar gasto</button>
   </div>
 
@@ -769,6 +812,18 @@
   </div>
 
 
+  <!-- ── RECURRENTES ── -->
+  <div id="view-recurrentes" class="section hidden">
+    <div class="section-header">
+      <h4>🔄 Gastos recurrentes</h4>
+      <button class="btn-add-sm" onclick="abrirSheetNuevoRecurrente()">+ Agregar</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);padding:4px 0 8px">La app te avisa cada mes para confirmar y ajustar el monto antes de registrar.</div>
+    <div id="recurrentes-pendientes"></div>
+    <div id="recurrentes-container"></div>
+  </div>
+
+
 </main>
 
 <script type="module">
@@ -797,6 +852,7 @@ const colInversiones = collection(db, "inversiones");
 const colPresupuestos = collection(db, "presupuestos");
 const colCambios = collection(db, "cambios");
 const colTarjetas = collection(db, "tarjetas");
+const colRecurrentes = collection(db, "recurrentes");
 const colGastosTarjeta = collection(db, "gastosTarjeta");
 const colMetas = collection(db, "metas");
 const colAportes = collection(db, "aportes");
@@ -835,7 +891,7 @@ window.agregarCatNueva = () => {
 };
 
 // ── STATE ────────────────────────────────────────────────────
-let gastos = [], vencimientos = [], cuotas = [], ingresos = [], inversiones = [], presupuestos = [], cambios = [], tarjetas = [], gastosTarjeta = [], metas = [], aportes = [];
+let gastos = [], vencimientos = [], cuotas = [], ingresos = [], inversiones = [], presupuestos = [], cambios = [], tarjetas = [], gastosTarjeta = [], metas = [], aportes = [], recurrentes = [];
 let currentView = "dashboard";
 let currentTipo = "grande";
 let currentFilter = "todos";
@@ -843,7 +899,7 @@ let currentVencFilter = "pendientes";
 let currentMes = new Date().getMonth();
 let currentAnio = new Date().getFullYear();
 let selectedCat = "";
-let loaded = { gastos: false, venc: false, cuotas: false, ingresos: false, inversiones: false, presupuestos: false, cambios: false, tarjetas: false, gastosTarjeta: false, metas: false, aportes: false };
+let loaded = { gastos: false, venc: false, cuotas: false, ingresos: false, inversiones: false, presupuestos: false, cambios: false, tarjetas: false, gastosTarjeta: false, metas: false, aportes: false, recurrentes: false };
 let preciosCripto = {};
 let dolarBlue = null;
 let confirmCallback = null;
@@ -870,6 +926,11 @@ onSnapshot(query(colIngresos, orderBy("timestamp","desc")), snap => {
   ingresos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   loaded.ingresos = true; checkLoaded(); render();
 }, () => { loaded.ingresos = true; checkLoaded(); });
+
+onSnapshot(query(colRecurrentes, orderBy("timestamp","desc")), snap => {
+  recurrentes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  loaded.recurrentes = true; checkLoaded(); render();
+}, () => { loaded.recurrentes = true; checkLoaded(); });
 
 onSnapshot(query(colTarjetas, orderBy("nombre","asc")), snap => {
   tarjetas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1027,7 +1088,7 @@ document.getElementById("overlay-confirm").addEventListener("click", e => {
 // ── NAVIGATION ───────────────────────────────────────────────
 window.setView = (v) => {
   currentView = v;
-  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial","inversiones","buscar","presupuesto","cambios","tarjetas","metas","ingresos"];
+  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial","inversiones","buscar","presupuesto","cambios","tarjetas","metas","ingresos","recurrentes"];
   views.forEach(id => {
     document.getElementById("view-"+id).classList.toggle("hidden", id !== v);
     document.querySelector(`.nav-btn[data-view="${id}"]`)?.classList.toggle("active", id === v);
@@ -1111,10 +1172,16 @@ window.agregarGasto = async () => {
   try {
     const nota = document.getElementById("f-nota")?.value.trim() || "";
     const tag = document.getElementById("f-tag")?.value || "";
+    const fotoUrl = document.getElementById("f-foto-url")?.value || "";
+    const esRecurrente = document.getElementById("f-recurrente")?.checked || false;
     if (esTarjeta) {
-      await addDoc(colGastosTarjeta, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, tarjetaId:medioPago, timestamp:serverTimestamp() });
+      await addDoc(colGastosTarjeta, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, fotoUrl, tarjetaId:medioPago, timestamp:serverTimestamp() });
     } else {
-      await addDoc(colGastos, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, timestamp:serverTimestamp() });
+      await addDoc(colGastos, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, fotoUrl, timestamp:serverTimestamp() });
+    }
+    if (esRecurrente) {
+      const existente = recurrentes.find(r => r.descripcion === desc && r.categoria === selectedCat);
+      if (!existente) await addDoc(colRecurrentes, { descripcion:desc, ultimoMonto:monto, categoria:selectedCat, tipo:currentTipo, activo:true, timestamp:serverTimestamp() });
     }
     document.getElementById("f-desc").value = "";
     document.getElementById("f-monto").value = "";
@@ -1122,6 +1189,10 @@ window.agregarGasto = async () => {
     if (document.getElementById("f-tag")) document.getElementById("f-tag").value = "";
     document.querySelectorAll("[data-ntag]").forEach(b => b.classList.remove("active-grande","active-hormiga","active-medio"));
     if (document.getElementById("f-pago")) document.getElementById("f-pago").value = "efectivo";
+    if (document.getElementById("f-foto-url")) document.getElementById("f-foto-url").value = "";
+    if (document.getElementById("foto-preview")) { document.getElementById("foto-preview").style.display="none"; }
+    if (document.getElementById("f-foto")) document.getElementById("f-foto").value = "";
+    if (document.getElementById("f-recurrente")) document.getElementById("f-recurrente").checked = false;
     selectedCat = ""; buildCatGrid();
     document.getElementById("f-monto").focus();
     showToast(esTarjeta ? "Gasto en tarjeta registrado ✓" : "Gasto registrado ✓");
@@ -1345,33 +1416,152 @@ function calcCuota(c) {
 
 // ── INGRESO ──────────────────────────────────────────────────
 window.abrirSheetIngreso = () => {
-  const ing = getIngresoMes();
+  const hoy = new Date().toISOString().slice(0,10);
   abrirSheet(`
-    <h3>💰 Ingreso de ${MONTHS[currentMes]}</h3>
+    <h3>💰 Nuevo ingreso</h3>
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
-      <div class="form-group"><label>Ingreso en USD</label><input type="number" id="ni-usd" placeholder="ej: 1500" value="${ing ? ing.usd : ""}" /></div>
-      <div style="font-size:12px;color:var(--muted)">El tipo de cambio del dólar blue se toma automáticamente (${dolarBlue ? ars(dolarBlue) : "cargando..."})</div>
-      <button class="btn-primary" style="background:var(--grande)" onclick="guardarIngreso()">Guardar</button>
+      <div class="form-group">
+        <label>Moneda</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button id="ni-btn-usd" onclick="selMonedaIngreso('usd')" style="padding:10px;border-radius:10px;border:2px solid var(--grande);background:var(--grande-bg);color:var(--grande-light);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">💵 USD</button>
+          <button id="ni-btn-ars" onclick="selMonedaIngreso('ars')" style="padding:10px;border-radius:10px;border:2px solid var(--border2);background:var(--bg3);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">🇦🇷 ARS</button>
+        </div>
+        <input type="hidden" id="ni-moneda" value="usd" />
+      </div>
+      <div class="form-group">
+        <label id="ni-monto-label">Monto en USD</label>
+        <input type="number" id="ni-usd" placeholder="ej: 1500" inputmode="decimal" />
+      </div>
+      <div id="ni-tc-wrap" class="form-group" style="display:flex;flex-direction:column;gap:7px">
+        <label>Tipo de cambio (ARS por USD)</label>
+        <input type="number" id="ni-tc-manual" placeholder="${dolarBlue ? Math.round(dolarBlue) : 'ej: 1400'}" value="${dolarBlue ? Math.round(dolarBlue) : ''}" inputmode="decimal" />
+        <div style="font-size:11px;color:var(--muted)">Blue hoy: ${dolarBlue ? ars(dolarBlue) : "cargando..."}</div>
+      </div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="ni-fecha" value="${hoy}" /></div>
+      <div class="form-group"><label>Descripción / Fuente</label><input type="text" id="ni-nota" placeholder="ej: Sueldo, Freelance, Trabajo extra..." /></div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="guardarIngreso()">Registrar ingreso</button>
       <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
     </div>
   `);
 };
-window.guardarIngreso = async (keyOverride = null) => {
-  const usdVal = parseFloat(document.getElementById("ni-usd").value.replace(",","."));
-  const tcManual = parseFloat(document.getElementById("ni-tc-manual")?.value.replace(",","."));
-  const tc = !isNaN(tcManual) && tcManual > 0 ? tcManual : dolarBlue;
+
+window.selMonedaIngreso = (moneda) => {
+  const btnUsd = document.getElementById("ni-btn-usd");
+  const btnArs = document.getElementById("ni-btn-ars");
+  const tcWrap = document.getElementById("ni-tc-wrap");
+  const label = document.getElementById("ni-monto-label");
+  document.getElementById("ni-moneda").value = moneda;
+  if (moneda === "usd") {
+    btnUsd.style.cssText += ";border-color:var(--grande);background:var(--grande-bg);color:var(--grande-light)";
+    btnArs.style.cssText += ";border-color:var(--border2);background:var(--bg3);color:var(--muted)";
+    tcWrap.style.display = "flex"; label.textContent = "Monto en USD";
+  } else {
+    btnArs.style.cssText += ";border-color:#22c55e;background:#1a2a1a;color:#86efac";
+    btnUsd.style.cssText += ";border-color:var(--border2);background:var(--bg3);color:var(--muted)";
+    tcWrap.style.display = "none"; label.textContent = "Monto en ARS";
+  }
+};
+window.guardarIngreso = async () => {
+  const moneda = document.getElementById("ni-moneda")?.value || "usd";
+  const montoVal = parseFloat(document.getElementById("ni-usd").value.replace(",","."));
   const nota = document.getElementById("ni-nota")?.value.trim() || "";
-  if (isNaN(usdVal)||usdVal<=0) { showToast("Ingresá un monto válido","var(--red)"); return; }
-  if (!tc) { showToast("Ingresá el tipo de cambio","var(--red)"); return; }
-  const key = keyOverride || mesKey(currentMes, currentAnio);
-  const ing = ingresos.find(i => i.mesKey === key) || null;
+  const fecha = document.getElementById("ni-fecha")?.value || new Date().toISOString().slice(0,10);
+  if (isNaN(montoVal)||montoVal<=0) { showToast("Ingresá un monto válido","var(--red)"); return; }
+  const [y, m] = fecha.split("-").map(Number);
+  const key = mesKey(m-1, y);
+  let usdVal, tc, arsVal;
+  if (moneda === "ars") {
+    arsVal = montoVal;
+    tc = dolarBlue || 1;
+    usdVal = arsVal / tc;
+  } else {
+    const tcManual = parseFloat(document.getElementById("ni-tc-manual")?.value.replace(",","."));
+    tc = !isNaN(tcManual) && tcManual > 0 ? tcManual : dolarBlue;
+    if (!tc||isNaN(tc)) { showToast("Ingresá el tipo de cambio","var(--red)"); return; }
+    usdVal = montoVal;
+    arsVal = usdVal * tc;
+  }
   try {
-    if (ing) {
-      await updateDoc(doc(db,"ingresos",ing.id), { usd:usdVal, tipoCambio:tc, ars:usdVal*tc, nota });
-    } else {
-      await addDoc(colIngresos, { usd:usdVal, tipoCambio:tc, ars:usdVal*tc, mesKey:key, nota, timestamp:serverTimestamp() });
-    }
-    cerrarSheet(); showToast("Ingreso guardado ✓");
+    await addDoc(colIngresos, { usd:usdVal, tipoCambio:tc, ars:arsVal, mesKey:key, fecha, nota, moneda, timestamp:serverTimestamp() });
+    cerrarSheet(); showToast("Ingreso registrado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.abrirSheetEditarIngreso = (id) => {
+  const ing = ingresos.find(x => x.id === id);
+  if (!ing) return;
+  const fechaVal = ing.fecha || (ing.mesKey.slice(0,4)+"-"+ing.mesKey.slice(5)+"-01");
+  const esARS = ing.moneda === "ars";
+  const montoMostrar = esARS ? ing.ars : ing.usd;
+  abrirSheet(`
+    <h3>✏️ Editar ingreso</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-group">
+        <label>Moneda</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button id="ei-btn-usd" onclick="selMonedaEditarIngreso('usd')" style="padding:10px;border-radius:10px;border:2px solid ${!esARS?"var(--grande)":"var(--border2)"};background:${!esARS?"var(--grande-bg)":"var(--bg3)"};color:${!esARS?"var(--grande-light)":"var(--muted)"};font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">💵 USD</button>
+          <button id="ei-btn-ars" onclick="selMonedaEditarIngreso('ars')" style="padding:10px;border-radius:10px;border:2px solid ${esARS?"#22c55e":"var(--border2)"};background:${esARS?"#1a2a1a":"var(--bg3)"};color:${esARS?"#86efac":"var(--muted)"};font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">🇦🇷 ARS</button>
+        </div>
+        <input type="hidden" id="ei-moneda" value="${ing.moneda||"usd"}" />
+      </div>
+      <div class="form-group">
+        <label id="ei-monto-label">${esARS?"Monto en ARS":"Monto en USD"}</label>
+        <input type="number" id="ei-usd" value="${montoMostrar}" inputmode="decimal" />
+      </div>
+      <div id="ei-tc-wrap" class="form-group" style="${esARS?"display:none":"display:flex;flex-direction:column;gap:7px"}">
+        <label>Tipo de cambio</label>
+        <input type="number" id="ei-tc" value="${ing.tipoCambio}" inputmode="decimal" />
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Blue hoy: ${dolarBlue ? ars(dolarBlue) : "—"}</div>
+      </div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="ei-fecha" value="${fechaVal}" /></div>
+      <div class="form-group"><label>Descripción / Fuente</label><input type="text" id="ei-nota" value="${escHtml(ing.nota||"")}" placeholder="ej: Sueldo, Freelance..." /></div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="actualizarIngreso('${id}')">Guardar cambios</button>
+      <button class="btn-danger" onclick="eliminarIngreso('${id}')">Eliminar</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+};
+
+window.selMonedaEditarIngreso = (moneda) => {
+  const btnUsd = document.getElementById("ei-btn-usd");
+  const btnArs = document.getElementById("ei-btn-ars");
+  const tcWrap = document.getElementById("ei-tc-wrap");
+  const label = document.getElementById("ei-monto-label");
+  const input = document.getElementById("ei-usd");
+  document.getElementById("ei-moneda").value = moneda;
+  if (moneda === "usd") {
+    btnUsd.style.borderColor="var(--grande)";btnUsd.style.background="var(--grande-bg)";btnUsd.style.color="var(--grande-light)";
+    btnArs.style.borderColor="var(--border2)";btnArs.style.background="var(--bg3)";btnArs.style.color="var(--muted)";
+    tcWrap.style.display="flex";tcWrap.style.flexDirection="column";tcWrap.style.gap="7px";
+    label.textContent="Monto en USD";
+  } else {
+    btnArs.style.borderColor="#22c55e";btnArs.style.background="#1a2a1a";btnArs.style.color="#86efac";
+    btnUsd.style.borderColor="var(--border2)";btnUsd.style.background="var(--bg3)";btnUsd.style.color="var(--muted)";
+    tcWrap.style.display="none";
+    label.textContent="Monto en ARS";
+  }
+};
+
+window.actualizarIngreso = async (id) => {
+  const moneda = document.getElementById("ei-moneda")?.value || "usd";
+  const montoVal = parseFloat(document.getElementById("ei-usd").value.replace(",","."));
+  const fecha = document.getElementById("ei-fecha").value;
+  const nota = document.getElementById("ei-nota").value.trim();
+  if (isNaN(montoVal)||montoVal<=0||!fecha) { showToast("Completá todos los campos","var(--red)"); return; }
+  const [y, m] = fecha.split("-").map(Number);
+  const key = mesKey(m-1, y);
+  let usdVal, tc, arsVal;
+  if (moneda === "ars") {
+    arsVal = montoVal; tc = dolarBlue || 1; usdVal = arsVal / tc;
+  } else {
+    const tcVal = parseFloat(document.getElementById("ei-tc").value.replace(",","."));
+    tc = !isNaN(tcVal)&&tcVal>0 ? tcVal : dolarBlue;
+    if (!tc||isNaN(tc)) { showToast("Ingresá el tipo de cambio","var(--red)"); return; }
+    usdVal = montoVal; arsVal = usdVal * tc;
+  }
+  try {
+    await updateDoc(doc(db,"ingresos",id), { usd:usdVal, tipoCambio:tc, ars:arsVal, fecha, mesKey:key, nota, moneda });
+    cerrarSheet(); showToast("Actualizado ✓");
   } catch { showToast("Error","var(--red)"); }
 };
 
@@ -1396,6 +1586,7 @@ function render() {
   if (currentView==="tarjetas") renderTarjetas();
   if (currentView==="metas") renderMetas();
   if (currentView==="ingresos") renderIngresos();
+  if (currentView==="recurrentes") renderRecurrentes();
 }
 
 
@@ -1567,6 +1758,7 @@ function renderLista() {
           <span class="gasto-monto" style="color:${color}">${ars(g.monto)}</span>
           ${usdEquiv !== null ? `<div class="usd-equiv">≈ USD ${usdEquiv.toFixed(2)}</div>` : ""}
         </div>
+        ${g.fotoUrl ? `<img src="${g.fotoUrl}" class="comprobante-thumb" onclick="abrirImgFullscreen('${g.fotoUrl}')" />` : ""}
         <button class="btn-icon edit" onclick="editarGasto('${g.id}')">✏️</button>
         <button class="btn-icon" onclick="eliminarGasto('${g.id}')">✕</button>
       </div>
@@ -1728,6 +1920,326 @@ function renderHistDetalle(idx) {
 
 
 
+
+
+
+// ── COMPROBANTE FOTO ──────────────────────────────────────
+
+const CLOUDINARY_CLOUD = "dcx1jxlsi";
+const CLOUDINARY_PRESET = "caja_comprobantes";
+
+window.previewFoto = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById("foto-preview");
+    preview.src = e.target.result;
+    preview.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+  subirFotoCloudinary(file);
+};
+
+async function subirFotoCloudinary(file) {
+  const progress = document.getElementById("upload-progress");
+  const fill = document.getElementById("upload-fill");
+  progress.style.display = "block";
+  fill.style.width = "30%";
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_PRESET);
+  try {
+    fill.style.width = "60%";
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:"POST", body:formData });
+    const data = await res.json();
+    fill.style.width = "100%";
+    setTimeout(() => { progress.style.display = "none"; fill.style.width = "0%"; }, 500);
+    document.getElementById("f-foto-url").value = data.secure_url;
+    showToast("Foto subida ✓");
+  } catch {
+    progress.style.display = "none";
+    showToast("Error al subir foto","var(--red)");
+  }
+}
+
+window.abrirImgFullscreen = (url) => {
+  document.getElementById("img-fullscreen-src").src = url;
+  document.getElementById("img-fullscreen").classList.add("show");
+};
+window.cerrarImgFullscreen = () => {
+  document.getElementById("img-fullscreen").classList.remove("show");
+};
+
+// ── GASTOS RECURRENTES ────────────────────────────────────
+
+window.abrirSheetNuevoRecurrente = () => {
+  abrirSheet(`
+    <h3>🔄 Nuevo recurrente</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-group"><label>Descripción</label><input type="text" id="nr-desc" placeholder="ej: Netflix, Gimnasio..." /></div>
+      <div class="form-group"><label>Último monto ($)</label><input type="number" id="nr-monto" placeholder="0" /></div>
+      <div class="form-group"><label>Categoría</label>
+        <select class="input-sel" id="nr-cat">
+          ${[...CATS_GRANDE, ...CATS_MEDIO, ...CATS_HORMIGA].filter((v,i,a)=>a.indexOf(v)===i).map(c=>`<option value="${c}">${c}</option>`).join("")}
+        </select>
+      </div>
+      <div class="form-group"><label>Tipo</label>
+        <select class="input-sel" id="nr-tipo">
+          <option value="grande">🏠 Grande</option>
+          <option value="medio">⚖️ Medio</option>
+          <option value="hormiga">🐜 Hormiga</option>
+        </select>
+      </div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="guardarNuevoRecurrente()">Guardar</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+};
+
+window.guardarNuevoRecurrente = async () => {
+  const desc = document.getElementById("nr-desc").value.trim();
+  const monto = parseFloat(document.getElementById("nr-monto").value.replace(",","."));
+  const cat = document.getElementById("nr-cat").value;
+  const tipo = document.getElementById("nr-tipo").value;
+  if (!desc||isNaN(monto)) { showToast("Completá todos los campos","var(--red)"); return; }
+  try {
+    await addDoc(colRecurrentes, { descripcion:desc, ultimoMonto:monto, categoria:cat, tipo, activo:true, timestamp:serverTimestamp() });
+    cerrarSheet(); showToast("Recurrente guardado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.abrirSheetConfirmarRecurrente = (id) => {
+  const r = recurrentes.find(x => x.id === id);
+  if (!r) return;
+  abrirSheet(`
+    <h3>🔄 ${escHtml(r.descripcion)}</h3>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Confirmá el monto de este mes — podés modificarlo si cambió</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="form-group"><label>Monto este mes ($)</label><input type="number" id="cr-monto" value="${r.ultimoMonto}" /></div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="cr-fecha" value="${new Date().toISOString().slice(0,10)}" /></div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="registrarRecurrente('${id}')">✓ Registrar gasto</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Ahora no</button>
+    </div>
+  `);
+};
+
+window.registrarRecurrente = async (id) => {
+  const r = recurrentes.find(x => x.id === id);
+  if (!r) return;
+  const monto = parseFloat(document.getElementById("cr-monto").value.replace(",","."));
+  const fecha = document.getElementById("cr-fecha").value;
+  if (isNaN(monto)||monto<=0) { showToast("Ingresá un monto válido","var(--red)"); return; }
+  const mesActual = mesKey(new Date().getMonth(), new Date().getFullYear());
+  try {
+    await addDoc(colGastos, { descripcion:r.descripcion, monto, categoria:r.categoria, fecha, tipo:r.tipo, nota:"Recurrente", tag:"", fotoUrl:"", timestamp:serverTimestamp() });
+    await updateDoc(doc(db,"recurrentes",id), { ultimoMonto:monto, ultimoMes:mesActual });
+    cerrarSheet(); showToast("Gasto registrado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.abrirSheetRecurrente = (id) => {
+  const r = recurrentes.find(x => x.id === id);
+  if (!r) return;
+  abrirSheet(`
+    <h3>🔄 ${escHtml(r.descripcion)}</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+      <div class="form-group"><label>Descripción</label><input type="text" id="er-desc" value="${escHtml(r.descripcion)}" /></div>
+      <div class="form-group"><label>Último monto ($)</label><input type="number" id="er-monto" value="${r.ultimoMonto}" /></div>
+      <div class="form-group"><label>Categoría</label>
+        <select class="input-sel" id="er-cat">
+          ${[...CATS_GRANDE, ...CATS_MEDIO, ...CATS_HORMIGA].filter((v,i,a)=>a.indexOf(v)===i).map(cat=>`<option value="${cat}" ${cat===r.categoria?"selected":""}>${cat}</option>`).join("")}
+        </select>
+      </div>
+      <div class="form-group"><label>Tipo</label>
+        <select class="input-sel" id="er-tipo">
+          <option value="grande" ${r.tipo==="grande"?"selected":""}>🏠 Grande</option>
+          <option value="medio" ${r.tipo==="medio"?"selected":""}>⚖️ Medio</option>
+          <option value="hormiga" ${r.tipo==="hormiga"?"selected":""}>🐜 Hormiga</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <label style="font-size:13px;color:var(--muted)">Activo</label>
+        <div class="toggle-switch ${r.activo?"on":""}" onclick="toggleRecurrente('${id}',this)"></div>
+      </div>
+      <button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionRecurrente('${id}')">Guardar</button>
+      <button class="btn-danger" onclick="eliminarRecurrente('${id}')">Eliminar</button>
+      <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
+    </div>
+  `);
+};
+
+window.toggleRecurrente = async (id, el) => {
+  const isOn = el.classList.toggle("on");
+  try { await updateDoc(doc(db,"recurrentes",id), { activo:isOn }); } catch {}
+};
+
+window.guardarEdicionRecurrente = async (id) => {
+  const desc = document.getElementById("er-desc").value.trim();
+  const monto = parseFloat(document.getElementById("er-monto").value.replace(",","."));
+  const cat = document.getElementById("er-cat").value;
+  const tipo = document.getElementById("er-tipo").value;
+  if (!desc||isNaN(monto)) { showToast("Completá todos los campos","var(--red)"); return; }
+  try {
+    await updateDoc(doc(db,"recurrentes",id), { descripcion:desc, ultimoMonto:monto, categoria:cat, tipo });
+    cerrarSheet(); showToast("Actualizado ✓");
+  } catch { showToast("Error","var(--red)"); }
+};
+
+window.eliminarRecurrente = (id) => {
+  pedirConfirm("¿Eliminás este recurrente?", "", async () => {
+    await deleteDoc(doc(db,"recurrentes",id));
+    cerrarSheet(); showToast("Eliminado","var(--yellow)");
+  });
+};
+
+function getRecurrentesPendientes() {
+  const mesActual = mesKey(new Date().getMonth(), new Date().getFullYear());
+  return recurrentes.filter(r => r.activo && r.ultimoMes !== mesActual);
+}
+
+function renderRecurrentes() {
+  const pendientesEl = document.getElementById("recurrentes-pendientes");
+  const container = document.getElementById("recurrentes-container");
+  const pendientes = getRecurrentesPendientes();
+
+  if (pendientes.length > 0) {
+    pendientesEl.innerHTML = `
+      <div style="background:#2a2510;border:1px solid var(--yellow);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:10px">⚠ Pendientes de este mes</div>
+        ${pendientes.map(r => `
+          <div class="recurrente-row recurrente-pendiente" onclick="abrirSheetConfirmarRecurrente('${r.id}')">
+            <div><div style="font-size:14px;font-weight:700">${escHtml(r.descripcion)}</div>
+            <div style="font-size:11px;color:var(--muted)">${escHtml(r.categoria)}</div></div>
+            <div style="text-align:right">
+              <div style="font-size:14px;font-weight:800;color:var(--yellow)">${ars(r.ultimoMonto)}</div>
+              <div style="font-size:10px;color:var(--muted)">último mes</div>
+            </div>
+          </div>`).join("")}
+      </div>`;
+  } else { pendientesEl.innerHTML = ""; }
+
+  if (recurrentes.length === 0) {
+    container.innerHTML = '<div class="empty">Sin gastos recurrentes.<br>Usá "+ Agregar" o marcá "Guardar como recurrente" al registrar un gasto.</div>';
+    return;
+  }
+
+  const activos = recurrentes.filter(r => r.activo);
+  const inactivos = recurrentes.filter(r => !r.activo);
+  container.innerHTML = (activos.length ? '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:4px 0 8px">Activos</div>' : "") +
+    activos.map(r => renderRecurrenteRow(r)).join("") +
+    (inactivos.length ? '<div style="font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px;padding:12px 0 8px">Inactivos</div>' : "") +
+    inactivos.map(r => renderRecurrenteRow(r)).join("");
+}
+
+function renderRecurrenteRow(r) {
+  const mesActual = mesKey(new Date().getMonth(), new Date().getFullYear());
+  const registradoEsteMes = r.ultimoMes === mesActual;
+  return `<div class="recurrente-row ${r.activo?"":"" }" style="opacity:${r.activo?1:.5}" onclick="abrirSheetRecurrente('${r.id}')">
+    <div><div style="font-size:14px;font-weight:700">${escHtml(r.descripcion)}</div>
+    <div style="font-size:11px;color:var(--muted)">${escHtml(r.categoria)} · ${r.tipo}</div></div>
+    <div style="text-align:right">
+      <div style="font-size:14px;font-weight:800;color:var(--grande-light)">${ars(r.ultimoMonto)}</div>
+      <div style="font-size:10px;color:${registradoEsteMes?"var(--green)":"var(--dim)"}">${registradoEsteMes?"✓ registrado":"pendiente"}</div>
+    </div>
+  </div>`;
+}
+
+// ── EMAIL SEMANAL ─────────────────────────────────────────
+
+function verificarEnvioEmailSemanal() {
+  const hoy = new Date();
+  // 0=Domingo
+  if (hoy.getDay() !== 0) return;
+  const ultimoEnvio = localStorage.getItem("ultimo_email_semanal");
+  const semanaActual = `${hoy.getFullYear()}-W${Math.ceil(hoy.getDate()/7)}`;
+  if (ultimoEnvio === semanaActual) return;
+  // Esperar a que carguen los datos
+  setTimeout(() => enviarResumenSemanal(semanaActual), 3000);
+}
+
+async function enviarResumenSemanal(semanaKey) {
+  try {
+    const mes = new Date().getMonth();
+    const anio = new Date().getFullYear();
+    const gm = getGastosMes(mes, anio);
+    const total = gm.reduce((s,g) => s+g.monto, 0);
+    const grandes = gm.filter(g=>g.tipo==="grande").reduce((s,g)=>s+g.monto,0);
+    const medio = gm.filter(g=>g.tipo==="medio").reduce((s,g)=>s+g.monto,0);
+    const hormiga = gm.filter(g=>g.tipo==="hormiga").reduce((s,g)=>s+g.monto,0);
+    const pendientes = vencimientos.filter(v=>!v.pagado);
+    const totalPendientes = pendientes.reduce((s,v)=>s+v.monto,0);
+    const ing = getTotalIngresosMes(mes, anio);
+    const recPendientes = getRecurrentesPendientes();
+
+    const mensaje = `💸 CAJA — Resumen semanal
+${MONTHS[mes]} ${anio}
+
+📊 GASTOS DEL MES
+Total: ${ars(total)}
+• Grandes: ${ars(grandes)}
+• Medio: ${ars(medio)}
+• Hormiga: ${ars(hormiga)}
+
+${ing ? `💰 INGRESO
+USD ${ing.usd} → ${ars(ing.ars)}
+Consumido: ${Math.round((total/ing.ars)*100)}%
+Disponible: ${ars(ing.ars - total)}` : "⚠ Sin ingreso cargado este mes"}
+
+${pendientes.length > 0 ? `🗓 VENCIMIENTOS PENDIENTES (${pendientes.length})
+${pendientes.slice(0,5).map(v=>`• ${v.descripcion}: ${ars(v.monto)} — vence ${v.fecha.slice(8)}/${v.fecha.slice(5,7)}`).join("
+")}
+Total pendiente: ${ars(totalPendientes)}` : "✓ Sin vencimientos pendientes"}
+
+${recPendientes.length > 0 ? `🔄 RECURRENTES SIN REGISTRAR (${recPendientes.length})
+${recPendientes.map(r=>`• ${r.descripcion}: ~${ars(r.ultimoMonto)}`).join("
+")}` : ""}
+
+---
+Enviado desde CAJA 💸`;
+
+    await emailjs.send("service_faoxsbb", "template_blby468", { mensaje });
+    localStorage.setItem("ultimo_email_semanal", semanaKey);
+    console.log("Email semanal enviado ✓");
+  } catch(e) {
+    console.error("Error enviando email:", e);
+  }
+}
+
+// ── NOTIFICACIONES PUSH ───────────────────────────────────
+
+async function solicitarPermisoPush() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "default") {
+    const perm = await Notification.requestPermission();
+    if (perm === "granted") showToast("🔔 Notificaciones activadas ✓");
+  }
+}
+
+function verificarNotificacionesVencimientos() {
+  if (Notification.permission !== "granted") return;
+  const en3dias = new Date();
+  en3dias.setDate(en3dias.getDate() + 3);
+  const proximos = vencimientos.filter(v => {
+    if (v.pagado) return false;
+    const fv = new Date(v.fecha + "T00:00:00");
+    return fv <= en3dias;
+  });
+  if (proximos.length === 0) return;
+  // Solo notificar una vez por día
+  const hoy = new Date().toISOString().slice(0,10);
+  const ultimaNot = localStorage.getItem("ultima_notif_venc");
+  if (ultimaNot === hoy) return;
+  localStorage.setItem("ultima_notif_venc", hoy);
+  proximos.forEach(v => {
+    const dias = diffDias(v.fecha);
+    const texto = dias === 0 ? "¡Vence hoy!" : dias < 0 ? `Venció hace ${Math.abs(dias)} días` : `Vence en ${dias} días`;
+    new Notification(`💸 CAJA — ${v.descripcion}`, {
+      body: `${texto} · ${ars(v.monto)}`,
+      icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236366f1'/><text y='.9em' font-size='80' x='10'>💸</text></svg>"
+    });
+  });
+}
 
 
 // ── TARJETAS ──────────────────────────────────────────────
@@ -3006,6 +3518,7 @@ const NAV_TABS_DEFAULT = [
   { id:"tarjetas", emoji:"💳", label:"Tarjetas" },
   { id:"metas", emoji:"🎯", label:"Metas" },
   { id:"ingresos", emoji:"💰", label:"Ingresos" },
+  { id:"recurrentes", emoji:"🔄", label:"Recurrentes" },
 ];
 
 let navOrder = (() => {
@@ -3054,9 +3567,12 @@ window.abrirSheetOrdenarPestanas = () => {
       <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
     </div>
   `);
+  setTimeout(initNavTouchDrag, 100);
 };
 
 let dragSrcEl = null;
+
+// Desktop: drag & drop
 window.navDragStart = (e) => {
   dragSrcEl = e.currentTarget;
   dragSrcEl.classList.add("dragging");
@@ -3066,7 +3582,7 @@ window.navDragOver = (e) => {
   e.preventDefault();
   e.dataTransfer.dropEffect = "move";
   const target = e.currentTarget;
-  if (target !== dragSrcEl) {
+  if (target && target !== dragSrcEl) {
     const list = document.getElementById("nav-order-list");
     const items = [...list.querySelectorAll(".nav-order-item")];
     const srcIdx = items.indexOf(dragSrcEl);
@@ -3080,6 +3596,59 @@ window.navDragEnd = (e) => {
   dragSrcEl?.classList.remove("dragging");
   dragSrcEl = null;
 };
+
+// Mobile: touch drag
+let touchDragEl = null, touchClone = null, touchOffX = 0, touchOffY = 0;
+
+function initNavTouchDrag() {
+  const list = document.getElementById("nav-order-list");
+  if (!list || list.dataset.touchInit) return;
+  list.dataset.touchInit = "1";
+
+  list.addEventListener("touchstart", e => {
+    const item = e.target.closest(".nav-order-item");
+    if (!item) return;
+    e.preventDefault();
+    touchDragEl = item;
+    item.classList.add("dragging");
+    const touch = e.touches[0];
+    const rect = item.getBoundingClientRect();
+    touchOffX = touch.clientX - rect.left;
+    touchOffY = touch.clientY - rect.top;
+    // Clonar para visual
+    touchClone = item.cloneNode(true);
+    touchClone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:.8;z-index:9999;pointer-events:none;background:var(--bg3);border-radius:10px;`;
+    document.body.appendChild(touchClone);
+  }, { passive: false });
+
+  list.addEventListener("touchmove", e => {
+    if (!touchDragEl) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (touchClone) {
+      touchClone.style.left = (touch.clientX - touchOffX) + "px";
+      touchClone.style.top = (touch.clientY - touchOffY) + "px";
+    }
+    // Encontrar el elemento sobre el que estamos
+    touchClone.style.display = "none";
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    touchClone.style.display = "";
+    const target = el?.closest(".nav-order-item");
+    if (target && target !== touchDragEl) {
+      const items = [...list.querySelectorAll(".nav-order-item")];
+      const srcIdx = items.indexOf(touchDragEl);
+      const tgtIdx = items.indexOf(target);
+      if (srcIdx < tgtIdx) list.insertBefore(touchDragEl, target.nextSibling);
+      else list.insertBefore(touchDragEl, target);
+    }
+  }, { passive: false });
+
+  list.addEventListener("touchend", () => {
+    if (touchDragEl) touchDragEl.classList.remove("dragging");
+    touchClone?.remove();
+    touchDragEl = null; touchClone = null;
+  });
+}
 
 window.guardarOrdenPestanas = () => {
   const items = document.querySelectorAll("#nav-order-list .nav-order-item");
@@ -3143,7 +3712,7 @@ function renderIngresos() {
         </div>
         <div class="health-bar-wrap"><div class="health-bar" style="width:${pct}%;background:${color}"></div></div>
         ${ing.nota ? `<div style="font-size:12px;color:var(--muted);margin-top:8px">📝 ${escHtml(ing.nota)}</div>` : ""}
-        <button class="btn-add-sm" style="margin-top:10px;width:100%" onclick="abrirSheetIngreso()">✏️ Editar ingreso de ${MONTHS[currentMes]}</button>
+        <button class="btn-add-sm" style="margin-top:10px;width:100%" onclick="abrirSheetIngreso()">+ Agregar otro ingreso</button>
       </div>`;
   } else {
     resumenEl.innerHTML = `
@@ -3214,7 +3783,7 @@ function renderIngresos() {
       const varHtml = variacion !== null
         ? `<span style="font-size:11px;font-weight:700;color:${variacion>=0?"#86efac":"var(--red)"}">${variacion>=0?"▲":"▼"} ${Math.abs(variacion).toFixed(0)}%</span>`
         : "";
-      return `<div style="background:var(--bg2);border-radius:12px;padding:13px 14px;border:1px solid var(--border);border-left:3px solid #86efac;margin-bottom:8px;cursor:pointer" onclick="abrirSheetIngreso('${ing.mesKey}')">
+      return `<div style="background:var(--bg2);border-radius:12px;padding:13px 14px;border:1px solid var(--border);border-left:3px solid #86efac;margin-bottom:8px;cursor:pointer" onclick="abrirSheetEditarIngreso('${ing.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
             <div style="font-size:14px;font-weight:700;color:#e0e7ff">${MONTHS[m-1]} ${a} ${varHtml}</div>
@@ -3308,6 +3877,8 @@ actualizarSelectorPago();
 applyNavOrder();
 applyWidgetPrefs();
 initWidgetDrag();
+solicitarPermisoPush();
+setTimeout(() => { verificarNotificacionesVencimientos(); verificarEnvioEmailSemanal(); }, 2000);
 // Mostrar botón edit solo si estamos en dashboard
 const _editBtn = document.getElementById("dash-edit-btn");
 if (_editBtn) _editBtn.style.display = "flex";
