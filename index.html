@@ -970,8 +970,8 @@ onSnapshot(query(colInversiones, orderBy("timestamp","desc")), snap => {
 }, () => { loaded.inversiones = true; checkLoaded(); });
 
 function checkLoaded() {
-  // Mostrar apenas carguen los datos principales
-  if (loaded.gastos && loaded.venc && loaded.ingresos) {
+  // Mostrar apenas carguen gastos y vencimientos
+  if (loaded.gastos && loaded.venc) {
     document.getElementById("dash-loading").classList.add("hidden");
     document.getElementById("dash-content").classList.remove("hidden");
   }
@@ -981,7 +981,7 @@ function checkLoaded() {
 setTimeout(() => {
   Object.keys(loaded).forEach(k => { loaded[k] = true; });
   checkLoaded();
-}, 2000);
+}, 1000);
 
 // ── DÓLAR BLUE ───────────────────────────────────────────────
 async function fetchDolar() {
@@ -3878,7 +3878,7 @@ applyNavOrder();
 applyWidgetPrefs();
 initWidgetDrag();
 solicitarPermisoPush();
-setTimeout(() => { verificarNotificacionesVencimientos(); verificarEnvioEmailSemanal(); }, 2000);
+setTimeout(() => { verificarNotificacionesVencimientos(); verificarEnvioEmailSemanal(); }, 1000);
 // Mostrar botón edit solo si estamos en dashboard
 const _editBtn = document.getElementById("dash-edit-btn");
 if (_editBtn) _editBtn.style.display = "flex";
