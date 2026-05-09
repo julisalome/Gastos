@@ -352,6 +352,7 @@
   <button class="nav-btn" data-view="cambios" onclick="setView('cambios')">💱 Cambios</button>
   <button class="nav-btn" data-view="tarjetas" onclick="setView('tarjetas')">💳 Tarjetas</button>
   <button class="nav-btn" data-view="metas" onclick="setView('metas')">🎯 Metas</button>
+  <button class="nav-btn" data-view="ingresos" onclick="setView('ingresos')">💰 Ingresos</button>
   <button class="nav-btn" onclick="abrirSheetOrdenarPestanas()" title="Ordenar pestañas">⚙️</button>
 </nav>
 
@@ -664,6 +665,22 @@
   </div>
 
 
+  <!-- ── INGRESOS ── -->
+  <div id="view-ingresos" class="section hidden">
+    <div class="section-header">
+      <h4>💰 Mis ingresos</h4>
+      <button class="btn-add-sm" onclick="abrirSheetIngreso()">+ Cargar</button>
+    </div>
+    <div id="ing-resumen-mes"></div>
+    <div class="card" id="ing-grafico-card" style="display:none">
+      <div class="card-title">📈 Progresión de ingresos (últimos 6 meses)</div>
+      <canvas id="ing-canvas" height="140" style="width:100%;margin-top:8px"></canvas>
+      <div id="ing-stats" style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap"></div>
+    </div>
+    <div id="ing-lista"></div>
+  </div>
+
+
 </main>
 
 <script type="module">
@@ -911,7 +928,7 @@ document.getElementById("overlay-confirm").addEventListener("click", e => {
 // ── NAVIGATION ───────────────────────────────────────────────
 window.setView = (v) => {
   currentView = v;
-  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial","inversiones","buscar","presupuesto","cambios","tarjetas","metas"];
+  const views = ["dashboard","lista","nuevo","vencimientos","cuotas","historial","inversiones","buscar","presupuesto","cambios","tarjetas","metas","ingresos"];
   views.forEach(id => {
     document.getElementById("view-"+id).classList.toggle("hidden", id !== v);
     document.querySelector(`.nav-btn[data-view="${id}"]`)?.classList.toggle("active", id === v);
@@ -1238,20 +1255,30 @@ window.abrirSheetIngreso = () => {
     </div>
   `);
 };
-window.guardarIngreso = async () => {
+window.guardarIngreso = async (keyOverride = null) => {
   const usdVal = parseFloat(document.getElementById("ni-usd").value.replace(",","."));
+  const tcManual = parseFloat(document.getElementById("ni-tc-manual")?.value.replace(",","."));
+  const tc = !isNaN(tcManual) && tcManual > 0 ? tcManual : dolarBlue;
+  const nota = document.getElementById("ni-nota")?.value.trim() || "";
   if (isNaN(usdVal)||usdVal<=0) { showToast("Ingresá un monto válido","var(--red)"); return; }
-  if (!dolarBlue) { showToast("Esperá a que cargue el tipo de cambio","var(--yellow)"); return; }
-  const key = mesKey(currentMes, currentAnio);
-  const ing = getIngresoMes();
+  if (!tc) { showToast("Ingresá el tipo de cambio","var(--red)"); return; }
+  const key = keyOverride || mesKey(currentMes, currentAnio);
+  const ing = ingresos.find(i => i.mesKey === key) || null;
   try {
     if (ing) {
-      await updateDoc(doc(db,"ingresos",ing.id), { usd:usdVal, tipoCambio:dolarBlue, ars:usdVal*dolarBlue });
+      await updateDoc(doc(db,"ingresos",ing.id), { usd:usdVal, tipoCambio:tc, ars:usdVal*tc, nota });
     } else {
-      await addDoc(colIngresos, { usd:usdVal, tipoCambio:dolarBlue, ars:usdVal*dolarBlue, mesKey:key, timestamp:serverTimestamp() });
+      await addDoc(colIngresos, { usd:usdVal, tipoCambio:tc, ars:usdVal*tc, mesKey:key, nota, timestamp:serverTimestamp() });
     }
     cerrarSheet(); showToast("Ingreso guardado ✓");
   } catch { showToast("Error","var(--red)"); }
+};
+
+window.eliminarIngreso = async (id) => {
+  pedirConfirm("¿Eliminás este ingreso?", "", async () => {
+    await deleteDoc(doc(db,"ingresos",id));
+    cerrarSheet(); showToast("Eliminado","var(--yellow)");
+  });
 };
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────
@@ -1267,6 +1294,7 @@ function render() {
   if (currentView==="cambios") renderCambios();
   if (currentView==="tarjetas") renderTarjetas();
   if (currentView==="metas") renderMetas();
+  if (currentView==="ingresos") renderIngresos();
 }
 
 
@@ -2747,6 +2775,7 @@ const NAV_TABS_DEFAULT = [
   { id:"cambios", emoji:"💱", label:"Cambios" },
   { id:"tarjetas", emoji:"💳", label:"Tarjetas" },
   { id:"metas", emoji:"🎯", label:"Metas" },
+  { id:"ingresos", emoji:"💰", label:"Ingresos" },
 ];
 
 let navOrder = JSON.parse(localStorage.getItem("nav_order") || JSON.stringify(NAV_TABS_DEFAULT.map(t => t.id)));
@@ -2831,6 +2860,197 @@ window.resetOrdenPestanas = () => {
   cerrarSheet();
   showToast("Orden restablecido");
 };
+
+
+
+// ── INGRESOS (pestaña) ────────────────────────────────────
+
+function renderIngresos() {
+  // Resumen mes actual
+  const ing = getIngresoMes();
+  const gm = getGastosMes();
+  const totalGastado = gm.reduce((s,g) => s+g.monto, 0);
+  const resumenEl = document.getElementById("ing-resumen-mes");
+
+  if (ing) {
+    const saldo = ing.ars - totalGastado;
+    const pct = Math.min((totalGastado / ing.ars) * 100, 100);
+    const color = pct < 60 ? "var(--green)" : pct < 85 ? "var(--yellow)" : "var(--red)";
+    resumenEl.innerHTML = `
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:14px;padding:16px;border:1px solid #2a2a4a;margin-bottom:4px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">${MONTHS[currentMes]} ${currentAnio}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div style="background:var(--bg3);border-radius:10px;padding:10px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Ingreso</div>
+            <div style="font-size:18px;font-weight:800;color:#86efac">USD ${ing.usd}</div>
+            <div style="font-size:11px;color:var(--muted)">${ars(ing.ars)}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:10px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">TC usado</div>
+            <div style="font-size:18px;font-weight:800;color:var(--grande-light)">${ars(ing.tipoCambio)}</div>
+            <div style="font-size:11px;color:var(--muted)">${dolarBlue ? (ing.tipoCambio >= dolarBlue ? "▲ mejor que blue" : "▼ menor que blue") : ""}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:10px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Gastado</div>
+            <div style="font-size:18px;font-weight:800;color:var(--red)">${ars(totalGastado)}</div>
+            <div style="font-size:11px;color:var(--muted)">USD ${(totalGastado/ing.tipoCambio).toFixed(0)}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:10px">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Saldo</div>
+            <div style="font-size:18px;font-weight:800;color:${saldo>=0?"#86efac":"var(--red)"}">${ars(saldo)}</div>
+            <div style="font-size:11px;color:var(--muted)">USD ${(Math.abs(saldo)/ing.tipoCambio).toFixed(0)}</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+          <span>Consumido</span><span style="font-weight:700;color:${color}">${Math.round(pct)}%</span>
+        </div>
+        <div class="health-bar-wrap"><div class="health-bar" style="width:${pct}%;background:${color}"></div></div>
+        ${ing.nota ? `<div style="font-size:12px;color:var(--muted);margin-top:8px">📝 ${escHtml(ing.nota)}</div>` : ""}
+        <button class="btn-add-sm" style="margin-top:10px;width:100%" onclick="abrirSheetIngreso()">✏️ Editar ingreso de ${MONTHS[currentMes]}</button>
+      </div>`;
+  } else {
+    resumenEl.innerHTML = `
+      <div style="background:var(--bg2);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center;margin-bottom:4px">
+        <div style="font-size:14px;color:var(--muted);margin-bottom:10px">Sin ingreso cargado para ${MONTHS[currentMes]} ${currentAnio}</div>
+        <button class="btn-primary" style="background:var(--grande);padding:10px 24px" onclick="abrirSheetIngreso()">+ Cargar ingreso</button>
+      </div>`;
+  }
+
+  // Gráfico últimos 6 meses
+  const hoy = new Date();
+  const ultimos6 = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    const m = d.getMonth(); const a = d.getFullYear();
+    const key = mesKey(m, a);
+    const ingMes = ingresos.find(x => x.mesKey === key);
+    const gastosMes = getGastosMes(m, a);
+    const totalGastosMes = gastosMes.reduce((s,g) => s+g.monto, 0);
+    ultimos6.push({ mes: MONTHS_SHORT[m], anio: a, usd: ingMes?.usd || 0, ars: ingMes?.ars || 0,
+      tc: ingMes?.tipoCambio || 0, gastado: totalGastosMes, key });
+  }
+
+  const grafCard = document.getElementById("ing-grafico-card");
+  const conDatos = ultimos6.filter(x => x.usd > 0);
+  if (conDatos.length >= 2) {
+    grafCard.style.display = "block";
+    dibujarGraficoIngresos(ultimos6);
+
+    // Stats
+    const promUSD = conDatos.reduce((s,x) => s+x.usd, 0) / conDatos.length;
+    const maxMes = conDatos.reduce((a,b) => a.usd > b.usd ? a : b);
+    const minMes = conDatos.reduce((a,b) => a.usd < b.usd ? a : b);
+    document.getElementById("ing-stats").innerHTML = `
+      <div style="flex:1;min-width:120px;background:var(--bg3);border-radius:10px;padding:10px;border:1px solid var(--border2)">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Promedio 6m</div>
+        <div style="font-size:16px;font-weight:800;color:var(--grande-light)">USD ${promUSD.toFixed(0)}</div>
+      </div>
+      <div style="flex:1;min-width:120px;background:var(--bg3);border-radius:10px;padding:10px;border:1px solid var(--border2)">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Mejor mes</div>
+        <div style="font-size:16px;font-weight:800;color:#86efac">USD ${maxMes.usd} <span style="font-size:11px;color:var(--muted)">${maxMes.mes}</span></div>
+      </div>
+      <div style="flex:1;min-width:120px;background:var(--bg3);border-radius:10px;padding:10px;border:1px solid var(--border2)">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Menor mes</div>
+        <div style="font-size:16px;font-weight:800;color:var(--yellow)">USD ${minMes.usd} <span style="font-size:11px;color:var(--muted)">${minMes.mes}</span></div>
+      </div>`;
+  } else {
+    grafCard.style.display = "none";
+  }
+
+  // Lista de todos los ingresos ordenados por fecha DESC
+  const listaEl = document.getElementById("ing-lista");
+  const ordenados = [...ingresos].sort((a,b) => b.mesKey.localeCompare(a.mesKey));
+  if (ordenados.length === 0) { listaEl.innerHTML = ""; return; }
+
+  listaEl.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 0 6px">Historial</div>` +
+    ordenados.map(ing => {
+      const [a, m] = ing.mesKey.split("-").map(Number);
+      const gm = getGastosMes(m-1, a);
+      const totalGastado = gm.reduce((s,g) => s+g.monto, 0);
+      const saldo = ing.ars - totalGastado;
+      const pct = Math.min((totalGastado / ing.ars) * 100, 100);
+      const color = pct < 60 ? "var(--green)" : pct < 85 ? "var(--yellow)" : "var(--red)";
+      // Variación vs mes anterior
+      const mesAnteriorKey = (() => { const d = new Date(a, m-2, 1); return mesKey(d.getMonth(), d.getFullYear()); })();
+      const ingAnterior = ingresos.find(x => x.mesKey === mesAnteriorKey);
+      const variacion = ingAnterior ? ((ing.usd - ingAnterior.usd) / ingAnterior.usd * 100) : null;
+      const varHtml = variacion !== null
+        ? `<span style="font-size:11px;font-weight:700;color:${variacion>=0?"#86efac":"var(--red)"}">${variacion>=0?"▲":"▼"} ${Math.abs(variacion).toFixed(0)}%</span>`
+        : "";
+      return `<div style="background:var(--bg2);border-radius:12px;padding:13px 14px;border:1px solid var(--border);border-left:3px solid #86efac;margin-bottom:8px;cursor:pointer" onclick="abrirSheetIngreso('${ing.mesKey}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#e0e7ff">${MONTHS[m-1]} ${a} ${varHtml}</div>
+            <div style="font-size:11px;color:var(--muted)">TC: ${ars(ing.tipoCambio)}${ing.nota?" · "+escHtml(ing.nota):""}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:16px;font-weight:800;color:#86efac">USD ${ing.usd}</div>
+            <div style="font-size:11px;color:var(--muted)">${ars(ing.ars)}</div>
+          </div>
+        </div>
+        <div class="health-bar-wrap" style="margin-bottom:5px"><div class="health-bar" style="width:${pct}%;background:${color}"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
+          <span>Gastado: <strong style="color:${color}">${ars(totalGastado)}</strong></span>
+          <span style="color:${saldo>=0?"#86efac":"var(--red)"}">Saldo: ${ars(saldo)}</span>
+        </div>
+      </div>`;
+    }).join("");
+}
+
+function dibujarGraficoIngresos(datos) {
+  const canvas = document.getElementById("ing-canvas");
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth || 400;
+  const W = canvas.width, H = 140;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, W, H);
+
+  const maxVal = Math.max(...datos.map(d => d.usd), 1);
+  const padL = 10, padR = 10, padT = 20, padB = 30;
+  const barW = Math.floor((W - padL - padR) / datos.length);
+  const barMaxH = H - padT - padB;
+
+  datos.forEach((d, i) => {
+    const x = padL + i * barW;
+    const barH = d.usd > 0 ? Math.max((d.usd / maxVal) * barMaxH, 4) : 0;
+    const y = H - padB - barH;
+    const isCurrent = d.mes === MONTHS_SHORT[currentMes] && d.anio === currentAnio;
+
+    // Barra
+    ctx.fillStyle = isCurrent ? "#86efac" : d.usd > 0 ? "#6366f1" : "#2a2a3a";
+    const radius = 4;
+    ctx.beginPath();
+    ctx.moveTo(x + 4, y + radius);
+    ctx.arcTo(x + 4, y, x + barW - 8, y, radius);
+    ctx.arcTo(x + barW - 8, y, x + barW - 8, y + barH, radius);
+    ctx.lineTo(x + barW - 8, y + barH);
+    ctx.lineTo(x + 4, y + barH);
+    ctx.closePath();
+    ctx.fill();
+
+    // Valor encima de la barra
+    if (d.usd > 0) {
+      ctx.fillStyle = isCurrent ? "#86efac" : "#a5b4fc";
+      ctx.font = `bold 10px DM Sans, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText(`${d.usd}`, x + barW/2, y - 4);
+    }
+
+    // Variación
+    if (i > 0 && d.usd > 0 && datos[i-1].usd > 0) {
+      const varPct = ((d.usd - datos[i-1].usd) / datos[i-1].usd * 100);
+      ctx.fillStyle = varPct >= 0 ? "#86efac" : "#f43f5e";
+      ctx.font = `9px DM Sans, sans-serif`;
+      ctx.fillText(`${varPct >= 0 ? "▲" : "▼"}${Math.abs(varPct).toFixed(0)}%`, x + barW/2, y - 14);
+    }
+
+    // Label mes
+    ctx.fillStyle = isCurrent ? "#e0e7ff" : "#666";
+    ctx.font = `10px DM Sans, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText(d.mes, x + barW/2, H - padB + 14);
+  });
+}
 
 
 // ── INIT ─────────────────────────────────────────────────────
