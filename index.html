@@ -231,6 +231,56 @@
     .meta-aporte-row:last-child { border-bottom:none; }
 
 
+
+    /* WIDGETS DASHBOARD */
+    .widget { position:relative; transition:opacity .2s; }
+    .widget.dragging { opacity:.4; }
+    .widget.drag-over { outline:2px dashed var(--grande); outline-offset:3px; border-radius:14px; }
+    .widget-handle {
+      position:absolute; top:8px; right:8px; z-index:10;
+      background:rgba(0,0,0,.4); border:1px solid var(--border2);
+      border-radius:8px; padding:3px 7px; cursor:grab;
+      font-size:13px; color:var(--dim); display:none;
+      user-select:none; backdrop-filter:blur(4px);
+    }
+    .widget-handle:active { cursor:grabbing; }
+    .dash-edit-mode .widget-handle { display:block; }
+    .dash-edit-mode .widget { cursor:grab; }
+    .widget-hidden { display:none !important; }
+    .dash-edit-btn {
+      position:fixed; bottom:24px; right:20px; z-index:200;
+      background:var(--grande); border:none; border-radius:50%;
+      width:48px; height:48px; font-size:20px; cursor:pointer;
+      box-shadow:0 4px 20px rgba(99,102,241,.5);
+      display:none; align-items:center; justify-content:center;
+      transition:all .2s;
+    }
+    .dash-edit-active { background:var(--hormiga) !important; }
+    .widget-toggle-panel {
+      position:fixed; bottom:84px; right:16px; z-index:199;
+      background:var(--bg2); border:1px solid var(--border2);
+      border-radius:16px; padding:14px; min-width:200px;
+      box-shadow:0 8px 32px rgba(0,0,0,.5); display:none;
+    }
+    .widget-toggle-panel.show { display:block; }
+    .widget-toggle-item {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 4px; border-bottom:1px solid var(--border);
+      font-size:13px; font-weight:600; color:var(--text);
+    }
+    .widget-toggle-item:last-child { border-bottom:none; }
+    .toggle-switch {
+      width:36px; height:20px; background:var(--border2); border-radius:10px;
+      position:relative; cursor:pointer; transition:background .2s; flex-shrink:0;
+    }
+    .toggle-switch.on { background:var(--grande); }
+    .toggle-switch::after {
+      content:""; position:absolute; top:3px; left:3px;
+      width:14px; height:14px; background:#fff; border-radius:50%;
+      transition:transform .2s;
+    }
+    .toggle-switch.on::after { transform:translateX(16px); }
+
     /* REORDENAR NAV */
     .nav-order-item { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border2); margin-bottom:8px; cursor:grab; user-select:none; transition:background .15s; }
     .nav-order-item:active { cursor:grabbing; background:#2a2a3a; }
@@ -363,112 +413,150 @@
     <div id="dash-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-text">Cargando...</div></div>
     <div id="dash-content" class="hidden" style="display:flex;flex-direction:column;gap:12px">
 
-      <!-- Botón registrar gasto -->
-      <button onclick="setView('nuevo')" style="width:100%;padding:17px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 24px rgba(99,102,241,.35);letter-spacing:.3px">
-        <span style="font-size:22px">➕</span> Registrar gasto
-      </button>
-
-      <!-- Botón secundario cambio USD -->
-      <button onclick="abrirSheetNuevoCambio()" style="width:100%;padding:11px;border-radius:12px;border:1px solid #1a3a20;background:#0d1a10;color:#86efac;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;">
-        💱 Registrar venta de dólares
-      </button>
-
-      <!-- Dólar blue -->
-      <div class="dolar-row">
-        <div><div class="dolar-label">💵 Dólar Blue — Venta</div><div class="dolar-time" id="dolar-time">Actualizando...</div></div>
-        <div class="dolar-val" id="dolar-val">—</div>
+      <!-- Widget: acciones rápidas (fijo, no movible) -->
+      <div id="w-acciones">
+        <button onclick="setView('nuevo')" style="width:100%;padding:17px;border-radius:14px;border:none;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 24px rgba(99,102,241,.35);letter-spacing:.3px;margin-bottom:10px">
+          <span style="font-size:22px">➕</span> Registrar gasto
+        </button>
+        <button onclick="abrirSheetNuevoCambio()" style="width:100%;padding:11px;border-radius:12px;border:1px solid #1a3a20;background:#0d1a10;color:#86efac;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;">
+          💱 Registrar venta de dólares
+        </button>
       </div>
 
-      <!-- Último bloque USD -->
-      <div id="cambio-dash-card" class="cambio-card" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:700;color:#86efac;text-transform:uppercase;letter-spacing:1px">💱 Último bloque vendido</div>
-          <button class="btn-add-sm" onclick="setView('cambios')">Ver todos</button>
+      <!-- Widget: dólar blue -->
+      <div class="widget" data-widget="dolar" draggable="true">
+        <span class="widget-handle">⠿</span>
+        <div class="dolar-row">
+          <div><div class="dolar-label">💵 Dólar Blue — Venta</div><div class="dolar-time" id="dolar-time">Actualizando...</div></div>
+          <div class="dolar-val" id="dolar-val">—</div>
         </div>
-        <div id="cambio-dash-body"></div>
       </div>
 
-      <!-- Balance ingreso -->
-      <div id="balance-section" class="card">
-        <div class="card-title">💰 Ingreso del mes</div>
-        <div id="balance-empty" style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:13px;color:var(--muted)">No cargaste tu ingreso este mes</span>
-          <button class="btn-add-sm" onclick="abrirSheetIngreso()">+ Cargar</button>
-        </div>
-        <div id="balance-data" class="hidden">
-          <div class="balance-grid" id="balance-grid"></div>
-          <div style="margin-top:10px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-              <span style="font-size:11px;color:var(--muted)">Consumido del ingreso</span>
-              <span style="font-size:11px;font-weight:700" id="balance-pct">0%</span>
-            </div>
-            <div class="health-bar-wrap"><div class="health-bar" id="health-bar"></div></div>
+      <!-- Widget: bloque USD -->
+      <div class="widget" data-widget="cambios" draggable="true">
+        <span class="widget-handle">⠿</span>
+        <div id="cambio-dash-card" class="cambio-card" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:700;color:#86efac;text-transform:uppercase;letter-spacing:1px">💱 Fondo disponible</div>
+            <button class="btn-add-sm" onclick="setView('cambios')">Ver todos</button>
           </div>
-          <button class="btn-add-sm" style="margin-top:10px;width:100%" onclick="abrirSheetIngreso()">✏️ Editar ingreso</button>
+          <div id="cambio-dash-body"></div>
         </div>
       </div>
 
-      <!-- Total -->
-      <div class="total-card">
-        <div class="total-label" id="dash-label">Total — —</div>
-        <div class="total-monto" id="dash-total">$0</div>
-        <div class="total-sub" id="dash-comprometido"></div>
-      </div>
-
-      <!-- Duo -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <div class="tipo-card" style="border-color:var(--grande);">
-          <div class="tipo-icon">🏠</div><div class="tipo-label">Grandes</div>
-          <div class="tipo-monto" id="dash-grande" style="color:var(--grande)">$0</div>
-          <div class="tipo-count" id="dash-grande-count">0 items</div>
-        </div>
-        <div class="tipo-card" style="border-color:#22c55e">
-          <div class="tipo-icon">⚖️</div><div class="tipo-label">Medio</div>
-          <div class="tipo-monto" id="dash-medio" style="color:#22c55e">$0</div>
-          <div class="tipo-count" id="dash-medio-count">0 items</div>
-        </div>
-        <div class="tipo-card" style="border-color:var(--hormiga)">
-          <div class="tipo-icon">🐜</div><div class="tipo-label">Hormiga</div>
-          <div class="tipo-monto" id="dash-hormiga" style="color:var(--hormiga)">$0</div>
-          <div class="tipo-count" id="dash-hormiga-count">0 items</div>
+      <!-- Widget: ingreso del mes -->
+      <div class="widget" data-widget="ingreso" draggable="true">
+        <span class="widget-handle">⠿</span>
+        <div id="balance-section" class="card">
+          <div class="card-title">💰 Ingreso del mes</div>
+          <div id="balance-empty" style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:13px;color:var(--muted)">No cargaste tu ingreso este mes</span>
+            <button class="btn-add-sm" onclick="abrirSheetIngreso()">+ Cargar</button>
+          </div>
+          <div id="balance-data" class="hidden">
+            <div class="balance-grid" id="balance-grid"></div>
+            <div style="margin-top:10px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <span style="font-size:11px;color:var(--muted)">Consumido del ingreso</span>
+                <span style="font-size:11px;font-weight:700" id="balance-pct">0%</span>
+              </div>
+              <div class="health-bar-wrap"><div class="health-bar" id="health-bar"></div></div>
+            </div>
+            <button class="btn-add-sm" style="margin-top:10px;width:100%" onclick="abrirSheetIngreso()">✏️ Editar ingreso</button>
+          </div>
         </div>
       </div>
 
-      <!-- Barra -->
-      <div class="bar-wrap" id="dash-bar" style="display:none">
-        <div class="bar-seg" id="bar-grande" style="background:var(--grande)"></div>
-        <div class="bar-seg" id="bar-medio" style="background:#22c55e"></div>
-        <div class="bar-seg" id="bar-hormiga" style="background:var(--hormiga)"></div>
-      </div>
-
-      <!-- Próximos vencimientos en dashboard -->
-      <div id="dash-venc-section">
-        <div class="section-header" style="margin-bottom:8px">
-          <h4>🗓 Próximos vencimientos</h4>
-          <button class="btn-add-sm" onclick="setView('vencimientos')">Ver todos</button>
-        </div>
-        <div id="dash-venc-list"></div>
-      </div>
-
-      <!-- Gráfico torta -->
-      <div class="card" id="dash-torta" style="display:none">
-        <div class="card-title">📊 Por categoría</div>
-        <div class="donut-wrap">
-          <canvas id="donut-canvas" width="110" height="110"></canvas>
-          <div class="donut-legend" id="donut-legend"></div>
+      <!-- Widget: total del mes -->
+      <div class="widget" data-widget="total" draggable="true">
+        <span class="widget-handle">⠿</span>
+        <div class="total-card">
+          <div class="total-label" id="dash-label">Total — —</div>
+          <div class="total-monto" id="dash-total">$0</div>
+          <div class="total-sub" id="dash-comprometido"></div>
         </div>
       </div>
 
-      <!-- Proyección -->
-      <div class="proyeccion-card" id="dash-proyeccion" style="display:none">
-        <div class="card-title" style="color:#c4b5fd">🔮 Proyección del mes</div>
-        <div id="proyeccion-body"></div>
+      <!-- Widget: cards grande/medio/hormiga -->
+      <div class="widget" data-widget="tipos" draggable="true">
+        <span class="widget-handle">⠿</span>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div class="tipo-card" style="border-color:var(--grande);">
+              <div class="tipo-icon">🏠</div><div class="tipo-label">Grandes</div>
+              <div class="tipo-monto" id="dash-grande" style="color:var(--grande)">$0</div>
+              <div class="tipo-count" id="dash-grande-count">0 items</div>
+            </div>
+            <div class="tipo-card" style="border-color:#22c55e">
+              <div class="tipo-icon">⚖️</div><div class="tipo-label">Medio</div>
+              <div class="tipo-monto" id="dash-medio" style="color:#22c55e">$0</div>
+              <div class="tipo-count" id="dash-medio-count">0 items</div>
+            </div>
+            <div class="tipo-card" style="border-color:var(--hormiga)">
+              <div class="tipo-icon">🐜</div><div class="tipo-label">Hormiga</div>
+              <div class="tipo-monto" id="dash-hormiga" style="color:var(--hormiga)">$0</div>
+              <div class="tipo-count" id="dash-hormiga-count">0 items</div>
+            </div>
+          </div>
+          <div class="bar-wrap" id="dash-bar" style="display:none">
+            <div class="bar-seg" id="bar-grande" style="background:var(--grande)"></div>
+            <div class="bar-seg" id="bar-medio" style="background:#22c55e"></div>
+            <div class="bar-seg" id="bar-hormiga" style="background:var(--hormiga)"></div>
+          </div>
+        </div>
       </div>
 
-      <div id="breakdown-grande" class="breakdown hidden"></div>
-      <div id="breakdown-medio" class="breakdown hidden"></div>
-      <div id="breakdown-hormiga" class="breakdown hidden"></div>
+      <!-- Widget: vencimientos próximos -->
+      <div class="widget" data-widget="vencimientos" draggable="true">
+        <span class="widget-handle">⠿</span>
+        <div id="dash-venc-section">
+          <div class="section-header" style="margin-bottom:8px">
+            <h4>🗓 Próximos vencimientos</h4>
+            <button class="btn-add-sm" onclick="setView('vencimientos')">Ver todos</button>
+          </div>
+          <div id="dash-venc-list"></div>
+        </div>
+      </div>
+
+      <!-- Widget: torta -->
+      <div class="widget" data-widget="torta" draggable="true">
+        <span class="widget-handle">⠿</span>
+        <div class="card" id="dash-torta" style="display:none">
+          <div class="card-title">📊 Por categoría</div>
+          <div class="donut-wrap">
+            <canvas id="donut-canvas" width="110" height="110"></canvas>
+            <div class="donut-legend" id="donut-legend"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Widget: proyección -->
+      <div class="widget" data-widget="proyeccion" draggable="true">
+        <span class="widget-handle">⠿</span>
+        <div class="proyeccion-card" id="dash-proyeccion" style="display:none">
+          <div class="card-title" style="color:#c4b5fd">🔮 Proyección del mes</div>
+          <div id="proyeccion-body"></div>
+        </div>
+      </div>
+
+      <!-- Widget: desglose -->
+      <div class="widget" data-widget="desglose" draggable="true">
+        <span class="widget-handle">⠿</span>
+        <div id="breakdown-grande" class="breakdown hidden"></div>
+        <div id="breakdown-medio" class="breakdown hidden" style="margin-top:8px"></div>
+        <div id="breakdown-hormiga" class="breakdown hidden" style="margin-top:8px"></div>
+      </div>
+
       <div id="dash-empty" class="empty hidden">Sin gastos este mes.<br>¡Registrá el primero!</div>
+    </div>
+
+    <!-- Botón flotante editar dashboard -->
+    <button class="dash-edit-btn" id="dash-edit-btn" onclick="toggleDashEdit()" title="Personalizar dashboard">✏️</button>
+
+    <!-- Panel de visibilidad -->
+    <div class="widget-toggle-panel" id="widget-toggle-panel">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Mostrar widgets</div>
+      <div id="widget-toggle-list"></div>
     </div>
   </div>
 
@@ -873,6 +961,17 @@ function getIngresoMes() {
   const key = mesKey(currentMes, currentAnio);
   return ingresos.find(i => i.mesKey === key) || null;
 }
+
+// Suma todos los ingresos hasta el mes actual (acumulado del año)
+function getTotalIngresosMes(mes = currentMes, anio = currentAnio) {
+  const key = mesKey(mes, anio);
+  const todos = ingresos.filter(i => i.mesKey === key);
+  if (todos.length === 0) return null;
+  const totalUSD = todos.reduce((s,i) => s + i.usd, 0);
+  const totalARS = todos.reduce((s,i) => s + i.ars, 0);
+  const tcProm = totalARS / totalUSD;
+  return { usd: totalUSD, ars: totalARS, tipoCambio: tcProm, items: todos };
+}
 function getGastosMes(mes = currentMes, anio = currentAnio) {
   return gastos.filter(g => {
     const [y,m] = g.fecha.split("-").map(Number);
@@ -934,6 +1033,8 @@ window.setView = (v) => {
     document.querySelector(`.nav-btn[data-view="${id}"]`)?.classList.toggle("active", id === v);
   });
   if (v === "nuevo") setTimeout(() => document.getElementById("f-monto").focus(), 50);
+  const editBtn = document.getElementById("dash-edit-btn");
+  if (editBtn) editBtn.style.display = v === "dashboard" ? "flex" : "none";
   render();
 };
 
@@ -1300,7 +1401,7 @@ function render() {
 
 // ── RENDER BALANCE ────────────────────────────────────────────
 function renderBalance() {
-  const ing = getIngresoMes();
+  const ing = getTotalIngresosMes();
   if (!ing) {
     document.getElementById("balance-empty").style.display = "flex";
     document.getElementById("balance-data").classList.add("hidden");
@@ -1312,16 +1413,15 @@ function renderBalance() {
   const gm = getGastosMes();
   const totalGastado = gm.reduce((s,g) => s+g.monto, 0);
   const pendientes = vencimientos.filter(v => !v.pagado).reduce((s,v) => s+v.monto, 0);
-  const comprometido = totalGastado + pendientes;
   const restante = ing.ars - totalGastado;
   const pct = Math.min((totalGastado / ing.ars) * 100, 100);
   const tc = dolarBlue || ing.tipoCambio;
-
   const color = pct < 60 ? "var(--green)" : pct < 85 ? "var(--yellow)" : "var(--red)";
+  const multipleLabel = ing.items.length > 1 ? ` <span style="font-size:10px;color:var(--muted)">(${ing.items.length} pagos)</span>` : "";
 
   document.getElementById("balance-grid").innerHTML = `
     <div class="balance-item">
-      <div class="balance-item-label">💵 Ingreso</div>
+      <div class="balance-item-label">💵 Ingreso${multipleLabel}</div>
       <div class="balance-item-val" style="color:var(--green)">${usd(ing.usd)}</div>
       <div class="balance-item-sub">${ars(ing.ars)}</div>
     </div>
@@ -2761,6 +2861,136 @@ function renderInversiones() {
 }
 
 
+
+// ── DASHBOARD WIDGETS ─────────────────────────────────────
+
+const WIDGET_LABELS = {
+  dolar: "💵 Dólar Blue",
+  cambios: "💱 Fondo USD",
+  ingreso: "💰 Ingreso del mes",
+  total: "📊 Total del mes",
+  tipos: "🏠 Grande / Medio / Hormiga",
+  vencimientos: "🗓 Próximos vencimientos",
+  torta: "🍩 Gráfico por categoría",
+  proyeccion: "🔮 Proyección",
+  desglose: "📋 Desglose por categoría"
+};
+
+let widgetOrder = JSON.parse(localStorage.getItem("widget_order") || JSON.stringify(Object.keys(WIDGET_LABELS)));
+let widgetHidden = JSON.parse(localStorage.getItem("widget_hidden") || "[]");
+let dashEditMode = false;
+let wDragSrc = null;
+
+function saveWidgetPrefs() {
+  localStorage.setItem("widget_order", JSON.stringify(widgetOrder));
+  localStorage.setItem("widget_hidden", JSON.stringify(widgetHidden));
+}
+
+function applyWidgetPrefs() {
+  const container = document.getElementById("dash-content");
+  if (!container) return;
+  const acciones = document.getElementById("w-acciones");
+  const empty = document.getElementById("dash-empty");
+
+  // Reordenar widgets según widgetOrder
+  widgetOrder.forEach(wid => {
+    const el = container.querySelector(`[data-widget="${wid}"]`);
+    if (el) container.insertBefore(el, empty);
+  });
+
+  // Aplicar visibilidad
+  container.querySelectorAll("[data-widget]").forEach(el => {
+    const wid = el.dataset.widget;
+    el.classList.toggle("widget-hidden", widgetHidden.includes(wid));
+  });
+}
+
+function buildWidgetToggleList() {
+  const list = document.getElementById("widget-toggle-list");
+  if (!list) return;
+  list.innerHTML = widgetOrder.map(wid => {
+    const visible = !widgetHidden.includes(wid);
+    return `<div class="widget-toggle-item">
+      <span>${WIDGET_LABELS[wid] || wid}</span>
+      <div class="toggle-switch ${visible?"on":""}" onclick="toggleWidgetVisibility('${wid}',this)"></div>
+    </div>`;
+  }).join("");
+}
+
+window.toggleWidgetVisibility = (wid, switchEl) => {
+  const isOn = switchEl.classList.contains("on");
+  if (isOn) {
+    widgetHidden.push(wid);
+    switchEl.classList.remove("on");
+  } else {
+    widgetHidden = widgetHidden.filter(x => x !== wid);
+    switchEl.classList.add("on");
+  }
+  saveWidgetPrefs();
+  applyWidgetPrefs();
+};
+
+window.toggleDashEdit = () => {
+  dashEditMode = !dashEditMode;
+  const content = document.getElementById("dash-content");
+  const btn = document.getElementById("dash-edit-btn");
+  const panel = document.getElementById("widget-toggle-panel");
+  content?.classList.toggle("dash-edit-mode", dashEditMode);
+  btn?.classList.toggle("dash-edit-active", dashEditMode);
+  btn.textContent = dashEditMode ? "✓" : "✏️";
+  if (dashEditMode) {
+    buildWidgetToggleList();
+    panel?.classList.add("show");
+    showToast("Arrastrá los widgets para reordenar");
+  } else {
+    panel?.classList.remove("show");
+    showToast("Preferencias guardadas ✓");
+  }
+};
+
+// Drag & drop de widgets
+function initWidgetDrag() {
+  const container = document.getElementById("dash-content");
+  if (!container || container.dataset.dragInit) return;
+  container.dataset.dragInit = "1";
+
+  container.addEventListener("dragstart", e => {
+    const widget = e.target.closest("[data-widget]");
+    if (!widget || !dashEditMode) { e.preventDefault(); return; }
+    wDragSrc = widget;
+    widget.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+  });
+
+  container.addEventListener("dragover", e => {
+    e.preventDefault();
+    if (!wDragSrc) return;
+    const target = e.target.closest("[data-widget]");
+    if (target && target !== wDragSrc) {
+      container.querySelectorAll("[data-widget]").forEach(el => el.classList.remove("drag-over"));
+      target.classList.add("drag-over");
+      const kids = [...container.querySelectorAll("[data-widget]")];
+      const srcIdx = kids.indexOf(wDragSrc);
+      const tgtIdx = kids.indexOf(target);
+      const empty = document.getElementById("dash-empty");
+      if (srcIdx < tgtIdx) container.insertBefore(wDragSrc, target.nextSibling || empty);
+      else container.insertBefore(wDragSrc, target);
+    }
+  });
+
+  container.addEventListener("dragend", () => {
+    if (wDragSrc) wDragSrc.classList.remove("dragging");
+    container.querySelectorAll("[data-widget]").forEach(el => el.classList.remove("drag-over"));
+    // Guardar nuevo orden
+    widgetOrder = [...container.querySelectorAll("[data-widget]")].map(el => el.dataset.widget);
+    saveWidgetPrefs();
+    wDragSrc = null;
+  });
+
+  container.addEventListener("drop", e => e.preventDefault());
+}
+
+
 // ── REORDENAR PESTAÑAS ────────────────────────────────────
 
 const NAV_TABS_DEFAULT = [
@@ -2867,7 +3097,7 @@ window.resetOrdenPestanas = () => {
 
 function renderIngresos() {
   // Resumen mes actual
-  const ing = getIngresoMes();
+  const ing = getTotalIngresosMes();
   const gm = getGastosMes();
   const totalGastado = gm.reduce((s,g) => s+g.monto, 0);
   const resumenEl = document.getElementById("ing-resumen-mes");
@@ -3069,6 +3299,11 @@ document.getElementById("f-monto").addEventListener("keydown", e => { if(e.key==
 buildCatGrid();
 actualizarSelectorPago();
 applyNavOrder();
+applyWidgetPrefs();
+initWidgetDrag();
+// Mostrar botón edit solo si estamos en dashboard
+const _editBtn = document.getElementById("dash-edit-btn");
+if (_editBtn) _editBtn.style.display = "flex";
 
 window.selTagNuevo = (btn, tag) => {
   const hidden = document.getElementById("f-tag");
