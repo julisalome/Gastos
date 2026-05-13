@@ -1332,45 +1332,64 @@ window.abrirSheetNuevaCuota = () => {
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
       <div class="form-group"><label>Descripción</label><input type="text" id="nc-desc" placeholder="ej: Parlante Sony" /></div>
       <div class="form-group"><label>Tarjeta</label><input type="text" id="nc-tarjeta" placeholder="ej: Visa, Naranja X" /></div>
-      <div class="form-group"><label>Monto por cuota ($)</label><input type="number" id="nc-cuota" placeholder="0" /></div>
-      <div class="form-group"><label>Total de cuotas</label><input type="number" id="nc-total-cuotas" placeholder="ej: 6" min="1" /></div>
+      <div class="form-group"><label>Monto total de la compra ($)</label><input type="number" id="nc-total-monto" placeholder="0" oninput="prevCuota()" /></div>
+      <div class="form-group"><label>Total de cuotas</label><input type="number" id="nc-total-cuotas" placeholder="ej: 6" min="1" oninput="prevCuota()" /></div>
+      <div id="nc-preview-cuota" style="display:none;background:var(--bg3);border-radius:10px;padding:10px 14px;border:1px solid var(--border2);font-size:13px;color:var(--muted)">
+        Cuota mensual: <strong id="nc-preview-val" style="color:var(--grande-light)"></strong>
+      </div>
       <div class="form-group"><label>Mes de inicio</label><input type="month" id="nc-mes-inicio" value="${mesInicio}" /></div>
       <button class="btn-primary" style="background:var(--grande)" onclick="guardarNuevaCuota()">Agregar</button>
       <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
     </div>
   `);
 };
+
+window.prevCuota = () => {
+  const total = parseFloat(document.getElementById("nc-total-monto")?.value || 0);
+  const cuotas = parseInt(document.getElementById("nc-total-cuotas")?.value || 0);
+  const prev = document.getElementById("nc-preview-cuota");
+  const val = document.getElementById("nc-preview-val");
+  if (total > 0 && cuotas > 0 && prev && val) {
+    prev.style.display = "block";
+    val.textContent = ars(total / cuotas) + "/mes";
+  } else if (prev) { prev.style.display = "none"; }
+};
 window.guardarNuevaCuota = async () => {
   const desc = document.getElementById("nc-desc").value.trim();
   const tarjeta = document.getElementById("nc-tarjeta").value.trim();
-  const montoCuota = parseFloat(document.getElementById("nc-cuota").value.replace(",","."));
+  const montoTotal = parseFloat(document.getElementById("nc-total-monto").value.replace(",","."));
   const totalCuotas = parseInt(document.getElementById("nc-total-cuotas").value);
   const mesInicio = document.getElementById("nc-mes-inicio").value;
-  if (!desc||!tarjeta||isNaN(montoCuota)||montoCuota<=0||isNaN(totalCuotas)||totalCuotas<1||!mesInicio) { showToast("Completá todos los campos","var(--red)"); return; }
+  if (!desc||!tarjeta||isNaN(montoTotal)||montoTotal<=0||isNaN(totalCuotas)||totalCuotas<1||!mesInicio) { showToast("Completá todos los campos","var(--red)"); return; }
+  const montoCuota = montoTotal / totalCuotas;
   try {
-    await addDoc(colCuotas, { descripcion:desc, tarjeta, montoCuota, totalCuotas, mesInicio, timestamp:serverTimestamp() });
+    await addDoc(colCuotas, { descripcion:desc, tarjeta, montoCuota, montoTotal, totalCuotas, mesInicio, timestamp:serverTimestamp() });
     cerrarSheet(); showToast("Compra en cuotas agregada ✓");
   } catch { showToast("Error al guardar","var(--red)"); }
 };
 window.abrirSheetCuota = (id) => {
-  const c = cuotas.find(x => x.id === id);
-  if (!c) return;
-  const { cuotaActual, cuotasRestantes, terminada } = calcCuota(c);
+  const cuota = cuotas.find(x => x.id === id);
+  if (!cuota) return;
+  const { cuotaActual, cuotasPagadas, cuotasRestantes, terminada } = calcCuota(cuota);
+  const montoTotal = cuota.montoTotal || (cuota.montoCuota * cuota.totalCuotas);
   abrirSheet(`
-    <h3>${escHtml(c.descripcion)}</h3>
-    <div style="margin-bottom:16px;font-size:13px;color:var(--muted)">${escHtml(c.tarjeta)} · ${terminada ? "Terminada" : `Pagadas ${cuotasPagadas} de ${c.totalCuotas} · En curso: cuota ${cuotaActual}`}</div>
+    <h3>${escHtml(cuota.descripcion)}</h3>
+    <div style="margin-bottom:16px;font-size:13px;color:var(--muted)">${escHtml(cuota.tarjeta)} · ${terminada ? "Terminada" : `Pagadas ${cuotasPagadas} de ${cuota.totalCuotas} · En curso: cuota ${cuotaActual}`}</div>
     <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="form-group"><label>Descripción</label><input type="text" id="ec-desc" value="${escHtml(c.descripcion)}" /></div>
-      <div class="form-group"><label>Tarjeta</label><input type="text" id="ec-tarjeta" value="${escHtml(c.tarjeta)}" /></div>
-      <div class="form-group"><label>Monto por cuota ($)</label><input type="number" id="ec-cuota" value="${c.montoCuota}" /></div>
-      <div class="form-group"><label>Total de cuotas</label><input type="number" id="ec-total" value="${c.totalCuotas}" /></div>
-      <div class="form-group"><label>Mes de inicio</label><input type="month" id="ec-mes" value="${c.mesInicio}" /></div>
+      <div class="form-group"><label>Descripción</label><input type="text" id="ec-desc" value="${escHtml(cuota.descripcion)}" /></div>
+      <div class="form-group"><label>Tarjeta</label><input type="text" id="ec-tarjeta" value="${escHtml(cuota.tarjeta)}" /></div>
+      <div class="form-group"><label>Monto total de la compra ($)</label><input type="number" id="ec-total-monto" value="${montoTotal}" oninput="prevCuotaEditar()" /></div>
+      <div class="form-group"><label>Total de cuotas</label><input type="number" id="ec-total" value="${cuota.totalCuotas}" oninput="prevCuotaEditar()" /></div>
+      <div id="ec-preview-cuota" style="background:var(--bg3);border-radius:10px;padding:10px 14px;border:1px solid var(--border2);font-size:13px;color:var(--muted)">
+        Cuota mensual: <strong id="ec-preview-val" style="color:var(--grande-light)">${ars(cuota.montoCuota)}/mes</strong>
+      </div>
+      <div class="form-group"><label>Mes de inicio</label><input type="month" id="ec-mes" value="${cuota.mesInicio}" /></div>
       <div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border2)">
         <div style="font-size:12px;color:var(--muted);margin-bottom:6px">RESUMEN</div>
         <div style="font-size:13px;display:flex;flex-direction:column;gap:4px">
-          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Pagado hasta ahora</span><span style="font-weight:700;color:var(--green)">${ars(c.montoCuota * cuotasPagadas)}</span></div>
-          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Restante (incl. este mes)</span><span style="font-weight:700;color:var(--yellow)">${ars(c.montoCuota * cuotasRestantes)}</span></div>
-          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Total compra</span><span style="font-weight:700">${ars(c.montoCuota * c.totalCuotas)}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Pagado hasta ahora</span><span style="font-weight:700;color:var(--green)">${ars(cuota.montoCuota * cuotasPagadas)}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Restante (incl. este mes)</span><span style="font-weight:700;color:var(--yellow)">${ars(cuota.montoCuota * cuotasRestantes)}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Total compra</span><span style="font-weight:700">${ars(montoTotal)}</span></div>
         </div>
       </div>
       <button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionCuota('${id}')">Guardar cambios</button>
@@ -1379,15 +1398,23 @@ window.abrirSheetCuota = (id) => {
     </div>
   `);
 };
+
+window.prevCuotaEditar = () => {
+  const total = parseFloat(document.getElementById("ec-total-monto")?.value || 0);
+  const cuotasN = parseInt(document.getElementById("ec-total")?.value || 0);
+  const val = document.getElementById("ec-preview-val");
+  if (total > 0 && cuotasN > 0 && val) val.textContent = ars(total / cuotasN) + "/mes";
+};
 window.guardarEdicionCuota = async (id) => {
   const desc = document.getElementById("ec-desc").value.trim();
   const tarjeta = document.getElementById("ec-tarjeta").value.trim();
-  const montoCuota = parseFloat(document.getElementById("ec-cuota").value.replace(",","."));
+  const montoTotal = parseFloat(document.getElementById("ec-total-monto").value.replace(",","."));
   const totalCuotas = parseInt(document.getElementById("ec-total").value);
   const mesInicio = document.getElementById("ec-mes").value;
-  if (!desc||!tarjeta||isNaN(montoCuota)||isNaN(totalCuotas)||!mesInicio) { showToast("Completá todos los campos","var(--red)"); return; }
+  if (!desc||!tarjeta||isNaN(montoTotal)||montoTotal<=0||isNaN(totalCuotas)||!mesInicio) { showToast("Completá todos los campos","var(--red)"); return; }
+  const montoCuota = montoTotal / totalCuotas;
   try {
-    await updateDoc(doc(db,"cuotas",id), { descripcion:desc, tarjeta, montoCuota, totalCuotas, mesInicio });
+    await updateDoc(doc(db,"cuotas",id), { descripcion:desc, tarjeta, montoCuota, montoTotal, totalCuotas, mesInicio });
     cerrarSheet(); showToast("Actualizado ✓");
   } catch { showToast("Error","var(--red)"); }
 };
@@ -1843,8 +1870,8 @@ function renderCuotaRow(c) {
         <div class="cuota-tarjeta">💳 ${escHtml(c.tarjeta)}</div>
       </div>
       <div>
-        <div class="cuota-monto">${ars(c.montoCuota)}/mes</div>
-        <div class="cuota-monto-sub">${ars(c.montoCuota*c.totalCuotas)} total</div>
+        <div class="cuota-monto">${ars(c.montoTotal || c.montoCuota*c.totalCuotas)}</div>
+        <div class="cuota-monto-sub">${ars(c.montoCuota)}/mes</div>
       </div>
     </div>
     <div class="cuota-progress-wrap">
