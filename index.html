@@ -185,6 +185,7 @@
     .cat-chip { padding:6px 13px; border-radius:20px; background:var(--bg3); border:1px solid var(--border2); color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
     .cat-chip.active-grande { background:var(--grande-bg); color:var(--grande-light); border-color:var(--grande); }
     .cat-chip.active-hormiga { background:var(--hormiga-bg); color:var(--hormiga-light); border-color:var(--hormiga); }
+    .cat-chip.active-selected { background:var(--grande-bg); color:var(--grande-light); border-color:var(--grande); }
 
     /* BUTTONS */
     .btn-primary { padding:15px 0; border-radius:12px; border:none; color:#fff; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; letter-spacing:.5px; transition:opacity .15s; width:100%; }
@@ -622,6 +623,7 @@
       <div style="display:flex;gap:8px;margin-top:8px;align-items:center" id="cat-nueva-wrap">
         <input type="text" id="cat-nueva-input" placeholder="+ Nueva categoría..." style="flex:1;padding:8px 12px;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;color:var(--text);font-size:13px;outline:none;font-family:inherit" />
         <button onclick="agregarCatNueva()" style="padding:8px 14px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--grande-light);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">+ Agregar</button>
+        <button onclick="abrirSheetGestionCats()" style="padding:8px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap" title="Gestionar categorías">⚙️</button>
       </div>
     </div>
     <div class="form-group">
@@ -860,32 +862,102 @@ const colAportes = collection(db, "aportes");
 // ── CONSTANTES ──────────────────────────────────────────────
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const MONTHS_SHORT = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-const CATS_GRANDE_DEFAULT = ["Expensas","Tarjeta","Internet","Alquiler","Seguro","Cuota","Servicio","Otro"];
-const CATS_MEDIO_DEFAULT = ["Club","Supermercado","Ropa","Salud","Educación","Mascota","Otro"];
-const CATS_HORMIGA_DEFAULT = ["Comida","Kiosco","Transporte","Café","Delivery","Farmacia","Varios"];
+// ── CATEGORÍAS UNIFICADAS ─────────────────────────────────
+const CATS_DEFAULT = ["Casa","Tarjeta","Supermercado","Delivery","Ropa","Nafta","Kiosco","Zafi","Ren","Otro"];
 
-// Categorías personalizables — se guardan en localStorage
-let CATS_GRANDE = JSON.parse(localStorage.getItem("cats_grande") || JSON.stringify(CATS_GRANDE_DEFAULT));
-let CATS_MEDIO = JSON.parse(localStorage.getItem("cats_medio") || JSON.stringify(CATS_MEDIO_DEFAULT));
-let CATS_HORMIGA = JSON.parse(localStorage.getItem("cats_hormiga") || JSON.stringify(CATS_HORMIGA_DEFAULT));
+// Cargar desde localStorage, agregar defaults faltantes
+let CATS = (() => {
+  const saved = JSON.parse(localStorage.getItem("cats_v2") || "null");
+  if (!saved) return [...CATS_DEFAULT];
+  // Agregar cualquier default que no esté (por actualizaciones futuras)
+  const missing = CATS_DEFAULT.filter(c => !saved.includes(c));
+  return [...saved, ...missing];
+})();
+
+// Compat: para que el código viejo que usa CATS_GRANDE/MEDIO/HORMIGA no rompa
+let CATS_GRANDE = CATS, CATS_MEDIO = CATS, CATS_HORMIGA = CATS;
 
 function saveCats() {
-  localStorage.setItem("cats_grande", JSON.stringify(CATS_GRANDE));
-  localStorage.setItem("cats_medio", JSON.stringify(CATS_MEDIO));
-  localStorage.setItem("cats_hormiga", JSON.stringify(CATS_HORMIGA));
+  localStorage.setItem("cats_v2", JSON.stringify(CATS));
+  // Sincronizar aliases
+  CATS_GRANDE = CATS; CATS_MEDIO = CATS; CATS_HORMIGA = CATS;
 }
 
 window.agregarCatNueva = () => {
   const input = document.getElementById("cat-nueva-input");
   const nombre = input.value.trim();
   if (!nombre) { showToast("Escribí el nombre de la categoría","var(--red)"); return; }
-  const cats = currentTipo === "grande" ? CATS_GRANDE : currentTipo === "medio" ? CATS_MEDIO : CATS_HORMIGA;
   const normalizado = nombre.charAt(0).toUpperCase() + nombre.slice(1);
-  if (cats.includes(normalizado)) { showToast("Esa categoría ya existe","var(--yellow)"); return; }
-  cats.push(normalizado);
+  if (CATS.includes(normalizado)) { showToast("Esa categoría ya existe","var(--yellow)"); return; }
+  CATS.push(normalizado);
   saveCats();
   selectedCat = normalizado;
   input.value = "";
+  buildCatGrid();
+  showToast("Categoría agregada ✓");
+};
+
+window.abrirSheetGestionCats = () => {
+  const renderItems = () => CATS.map((cat, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--border)">
+      <span style="font-size:14px;font-weight:600">${escHtml(cat)}</span>
+      ${CATS_DEFAULT.includes(cat)
+        ? `<span style="font-size:11px;color:var(--dim)">predeterminada</span>`
+        : `<button onclick="eliminarCat(${i})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;padding:0 4px;line-height:1" title="Eliminar">✕</button>`
+      }
+    </div>`).join("");
+
+  abrirSheet(`
+    <h3>⚙️ Gestionar categorías</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Las categorías predeterminadas no se pueden eliminar.</div>
+    <div id="cats-list">${renderItems()}</div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <input type="text" id="gc-nueva" placeholder="Nueva categoría..." style="flex:1;padding:11px 14px;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;color:var(--text);font-size:14px;outline:none;font-family:inherit" />
+      <button onclick="agregarCatDesdeGestion()" style="padding:11px 16px;border-radius:10px;background:var(--grande);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">+ Agregar</button>
+    </div>
+    <button class="btn-ghost" style="margin-top:10px;width:100%" onclick="cerrarSheet()">Cerrar</button>
+  `);
+};
+
+window.eliminarCat = (idx) => {
+  const cat = CATS[idx];
+  if (CATS_DEFAULT.includes(cat)) { showToast("No se puede eliminar una categoría predeterminada","var(--yellow)"); return; }
+  CATS.splice(idx, 1);
+  saveCats();
+  if (selectedCat === cat) selectedCat = "";
+  // Re-renderizar lista dentro del sheet
+  const list = document.getElementById("cats-list");
+  if (list) list.innerHTML = CATS.map((c2, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--border)">
+      <span style="font-size:14px;font-weight:600">${escHtml(c2)}</span>
+      ${CATS_DEFAULT.includes(c2)
+        ? `<span style="font-size:11px;color:var(--dim)">predeterminada</span>`
+        : `<button onclick="eliminarCat(${i})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">✕</button>`
+      }
+    </div>`).join("");
+  buildCatGrid();
+  showToast("Categoría eliminada","var(--yellow)");
+};
+
+window.agregarCatDesdeGestion = () => {
+  const input = document.getElementById("gc-nueva");
+  const nombre = input.value.trim();
+  if (!nombre) return;
+  const normalizado = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+  if (CATS.includes(normalizado)) { showToast("Ya existe","var(--yellow)"); return; }
+  CATS.push(normalizado);
+  saveCats();
+  input.value = "";
+  // Re-renderizar
+  const list = document.getElementById("cats-list");
+  if (list) list.innerHTML = CATS.map((c2, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--border)">
+      <span style="font-size:14px;font-weight:600">${escHtml(c2)}</span>
+      ${CATS_DEFAULT.includes(c2)
+        ? `<span style="font-size:11px;color:var(--dim)">predeterminada</span>`
+        : `<button onclick="eliminarCat(${i})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">✕</button>`
+      }
+    </div>`).join("");
   buildCatGrid();
   showToast("Categoría agregada ✓");
 };
@@ -1138,7 +1210,7 @@ function buildCatGrid(containerId="cat-grid", tipo=null, selected=null) {
   const grid = document.getElementById(containerId);
   if (!grid) return;
   grid.innerHTML = "";
-  const cats = t==="grande" ? CATS_GRANDE : t==="medio" ? CATS_MEDIO : CATS_HORMIGA;
+  const cats = CATS; // categorías unificadas para todos los tipos
   cats.forEach(cat => {
     const btn = document.createElement("button");
     btn.className = "cat-chip" + (sel===cat ? " active-"+t : "");
@@ -1187,7 +1259,7 @@ window.agregarGasto = async () => {
     document.getElementById("f-monto").value = "";
     if (document.getElementById("f-nota")) document.getElementById("f-nota").value = "";
     if (document.getElementById("f-tag")) document.getElementById("f-tag").value = "";
-    document.querySelectorAll("[data-ntag]").forEach(b => b.classList.remove("active-grande","active-hormiga","active-medio"));
+    document.querySelectorAll("[data-ntag]").forEach(b => b.classList.remove("active-grande","active-hormiga","active-medio","active-selected"));
     if (document.getElementById("f-pago")) document.getElementById("f-pago").value = "efectivo";
     if (document.getElementById("f-foto-url")) document.getElementById("f-foto-url").value = "";
     if (document.getElementById("foto-preview")) { document.getElementById("foto-preview").style.display="none"; }
@@ -1246,7 +1318,7 @@ window.abrirSheetNuevoVenc = () => {
       <div class="form-group"><label>Fecha de vencimiento</label><input type="date" id="nv-fecha" value="${todayStr()}" /></div>
       <div class="form-group"><label>Categoría</label>
         <select class="input-sel" id="nv-cat">
-          ${CATS_GRANDE.map(c=>`<option value="${c}">${c}</option>`).join("")}
+          ${CATS.map(c=>`<option value="${c}">${c}</option>`).join("")}
         </select>
       </div>
       <button class="btn-primary" style="background:var(--grande)" onclick="guardarNuevoVenc()">Agregar vencimiento</button>
@@ -1280,7 +1352,7 @@ window.abrirSheetVenc = (id) => {
       <div class="form-group"><label>Fecha de vencimiento</label><input type="date" id="ev-fecha" value="${v.fecha}" /></div>
       <div class="form-group"><label>Categoría</label>
         <select class="input-sel" id="ev-cat">
-          ${CATS_GRANDE.map(c=>`<option value="${c}" ${c===v.categoria?"selected":""}>${c}</option>`).join("")}
+          ${CATS.map(c=>`<option value="${c}" ${c===v.categoria?"selected":""}>${c}</option>`).join("")}
         </select>
       </div>
       <button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionVenc('${id}')">Guardar cambios</button>
@@ -2008,7 +2080,7 @@ window.abrirSheetNuevoRecurrente = () => {
       <div class="form-group"><label>Último monto ($)</label><input type="number" id="nr-monto" placeholder="0" /></div>
       <div class="form-group"><label>Categoría</label>
         <select class="input-sel" id="nr-cat">
-          ${[...CATS_GRANDE, ...CATS_MEDIO, ...CATS_HORMIGA].filter((v,i,a)=>a.indexOf(v)===i).map(c=>`<option value="${c}">${c}</option>`).join("")}
+          ${CATS.map(c=>`<option value="${c}">${c}</option>`).join("")}
         </select>
       </div>
       <div class="form-group"><label>Tipo</label>
@@ -2075,7 +2147,7 @@ window.abrirSheetRecurrente = (id) => {
       <div class="form-group"><label>Último monto ($)</label><input type="number" id="er-monto" value="${r.ultimoMonto}" /></div>
       <div class="form-group"><label>Categoría</label>
         <select class="input-sel" id="er-cat">
-          ${[...CATS_GRANDE, ...CATS_MEDIO, ...CATS_HORMIGA].filter((v,i,a)=>a.indexOf(v)===i).map(cat=>`<option value="${cat}" ${cat===r.categoria?"selected":""}>${cat}</option>`).join("")}
+          ${CATS.map(cat=>`<option value="${cat}" ${cat===r.categoria?"selected":""}>${cat}</option>`).join("")}
         </select>
       </div>
       <div class="form-group"><label>Tipo</label>
@@ -2879,7 +2951,7 @@ function renderBuscar() {
 }
 
 // ── PRESUPUESTO ───────────────────────────────────────────
-const TODAS_CATS = [...new Set([...CATS_GRANDE, ...CATS_MEDIO, ...CATS_HORMIGA])];
+const TODAS_CATS = CATS; // ahora es una sola lista
 
 window.abrirSheetNuevoPresupuesto = () => {
   abrirSheet(`
@@ -2888,7 +2960,7 @@ window.abrirSheetNuevoPresupuesto = () => {
       <div class="form-group">
         <label>Categoría</label>
         <select class="input-sel" id="np-cat">
-          ${TODAS_CATS.map(c => `<option value="${c}">${c}</option>`).join("")}
+          ${CATS.map(c => `<option value="${c}">${c}</option>`).join("")}
         </select>
       </div>
       <div class="form-group"><label>Tope mensual ($)</label><input type="number" id="np-tope" placeholder="ej: 50000" /></div>
@@ -3051,15 +3123,28 @@ function renderProyeccion(gm) {
 }
 
 // ── NOTAS Y TAGS en edición de gastos ─────────────────────
-// Override de editarGasto para incluir nota y tag
+// Override de editarGasto con selector de tipo + nota + tag
 window.editarGasto = (id) => {
   const g = gastos.find(x => x.id === id);
   if (!g) return;
+  const tipoColor = { grande:"var(--grande)", medio:"#22c55e", hormiga:"var(--hormiga)" };
+  const tipoBg = { grande:"var(--grande-bg)", medio:"#1a2a1a", hormiga:"var(--hormiga-bg)" };
+  const tipoLight = { grande:"var(--grande-light)", medio:"#86efac", hormiga:"var(--hormiga-light)" };
+  const btnStyle = (t) => `padding:10px 0;border-radius:10px;border:2px solid ${g.tipo===t?tipoColor[t]:"var(--border2)"};background:${g.tipo===t?tipoBg[t]:"var(--bg3)"};color:${g.tipo===t?tipoLight[t]:"var(--muted)"};font-size:13px;font-weight:700;cursor:pointer;font-family:inherit`;
   abrirSheet(`
     <h3>✏️ Editar gasto</h3>
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
-      <div class="form-group"><label>Descripción</label><input type="text" id="eg-desc" value="${escHtml(g.descripcion)}" /></div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <button id="eg-btn-grande" onclick="selTipoEditar('grande')" style="${btnStyle('grande')}">🏠 Grande</button>
+          <button id="eg-btn-medio"  onclick="selTipoEditar('medio')"  style="${btnStyle('medio')}">⚖️ Medio</button>
+          <button id="eg-btn-hormiga" onclick="selTipoEditar('hormiga')" style="${btnStyle('hormiga')}">🐜 Hormiga</button>
+        </div>
+        <input type="hidden" id="eg-tipo" value="${g.tipo}" />
+      </div>
       <div class="form-group"><label>Monto ($)</label><input type="number" id="eg-monto" value="${g.monto}" /></div>
+      <div class="form-group"><label>Descripción</label><input type="text" id="eg-desc" value="${escHtml(g.descripcion)}" /></div>
       <div class="form-group"><label>Categoría</label><div class="cat-grid" id="eg-cat-grid"></div></div>
       <div class="form-group"><label>Fecha</label><input type="date" id="eg-fecha" value="${g.fecha}" /></div>
       <div class="form-group"><label>Nota (opcional)</label><input type="text" id="eg-nota" placeholder="ej: cumpleaños de Juan" value="${escHtml(g.nota||"")}" /></div>
@@ -3067,26 +3152,42 @@ window.editarGasto = (id) => {
         <label>Etiqueta</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           ${["necesario","impulsivo","trabajo","otro"].map(t =>
-            `<button class="cat-chip ${g.tag===t?"active-grande":""}" data-tag="${t}" onclick="selTag(this,'${t}')">${t}</button>`
+            `<button class="cat-chip ${g.tag===t?"active-selected":""}" data-tag="${t}" onclick="selTag(this,'${t}')">${t}</button>`
           ).join("")}
         </div>
         <input type="hidden" id="eg-tag" value="${g.tag||""}" />
       </div>
-      <button class="btn-primary" style="background:var(--grande)" onclick="guardarEdicionGasto('${id}','${g.tipo}')">Guardar cambios</button>
+      <button class="btn-primary" id="eg-btn-guardar" style="background:${tipoColor[g.tipo]||"var(--grande)"}" onclick="guardarEdicionGasto('${id}')">Guardar cambios</button>
       <button class="btn-ghost" onclick="cerrarSheet()">Cancelar</button>
     </div>
   `);
   buildCatGrid("eg-cat-grid", g.tipo, g.categoria);
 };
 
-window.selTag = (btn, tag) => {
-  document.querySelectorAll("[data-tag]").forEach(b => b.classList.remove("active-grande"));
-  const current = document.getElementById("eg-tag").value;
-  if (current === tag) { document.getElementById("eg-tag").value = ""; }
-  else { btn.classList.add("active-grande"); document.getElementById("eg-tag").value = tag; }
+window.selTipoEditar = (t) => {
+  const tipoColor = { grande:"var(--grande)", medio:"#22c55e", hormiga:"var(--hormiga)" };
+  const tipoBg = { grande:"var(--grande-bg)", medio:"#1a2a1a", hormiga:"var(--hormiga-bg)" };
+  const tipoLight = { grande:"var(--grande-light)", medio:"#86efac", hormiga:"var(--hormiga-light)" };
+  document.getElementById("eg-tipo").value = t;
+  document.getElementById("eg-btn-guardar").style.background = tipoColor[t];
+  ["grande","medio","hormiga"].forEach(tp => {
+    const btn = document.getElementById("eg-btn-"+tp);
+    if (!btn) return;
+    btn.style.borderColor = tp===t ? tipoColor[tp] : "var(--border2)";
+    btn.style.background = tp===t ? tipoBg[tp] : "var(--bg3)";
+    btn.style.color = tp===t ? tipoLight[tp] : "var(--muted)";
+  });
 };
 
-window.guardarEdicionGasto = async (id, tipo) => {
+window.selTag = (btn, tag) => {
+  document.querySelectorAll("[data-tag]").forEach(b => b.classList.remove("active-grande","active-selected"));
+  const current = document.getElementById("eg-tag").value;
+  if (current === tag) { document.getElementById("eg-tag").value = ""; }
+  else { btn.classList.add("active-selected"); document.getElementById("eg-tag").value = tag; }
+};
+
+window.guardarEdicionGasto = async (id) => {
+  const tipo = document.getElementById("eg-tipo").value;
   const desc = document.getElementById("eg-desc").value.trim();
   const monto = parseFloat(document.getElementById("eg-monto").value.replace(",","."));
   const fecha = document.getElementById("eg-fecha").value;
@@ -3095,7 +3196,7 @@ window.guardarEdicionGasto = async (id, tipo) => {
   const tag = document.getElementById("eg-tag")?.value || "";
   if (!desc||isNaN(monto)||monto<=0||!cat||!fecha) { showToast("Completá todos los campos","var(--red)"); return; }
   try {
-    await updateDoc(doc(db,"gastos",id), { descripcion:desc, monto, categoria:cat, fecha, nota, tag });
+    await updateDoc(doc(db,"gastos",id), { descripcion:desc, monto, categoria:cat, fecha, nota, tag, tipo });
     cerrarSheet(); showToast("Gasto actualizado ✓");
   } catch { showToast("Error al guardar","var(--red)"); }
 };
@@ -3897,6 +3998,8 @@ selAnio.addEventListener("change", e => { currentAnio=+e.target.value; render();
 document.getElementById("f-fecha").value = todayStr();
 document.getElementById("f-desc").addEventListener("keydown", e => { if(e.key==="Enter") agregarGasto(); });
 document.getElementById("f-monto").addEventListener("keydown", e => { if(e.key==="Enter") agregarGasto(); });
+// Limpiar cats viejas si existen
+["cats_grande","cats_medio","cats_hormiga"].forEach(k => localStorage.removeItem(k));
 buildCatGrid();
 actualizarSelectorPago();
 applyNavOrder();
