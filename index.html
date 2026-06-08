@@ -656,6 +656,22 @@
       <img id="foto-preview" class="comprobante-preview" style="display:none" alt="Preview" onclick="abrirImgFullscreen(this.src)" />
       <input type="hidden" id="f-foto-url" value="" />
     </div>
+    <div style="background:#0d1a10;border:1px solid #1a3a20;border-radius:12px;padding:12px 14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0" id="usdt-toggle-row">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:600;color:#86efac">
+          <span>💵 Pagué en USDT</span>
+        </label>
+        <div class="toggle-switch" id="f-usdt-switch" onclick="toggleUSDT()" style="flex-shrink:0"></div>
+      </div>
+      <div id="f-usdt-panel" style="display:none;margin-top:12px;display:none;flex-direction:column;gap:10px">
+        <div class="form-group">
+          <label>Tipo de cambio (ARS por USDT)</label>
+          <input type="number" id="f-usdt-tc" inputmode="decimal" placeholder="${dolarBlue ? Math.round(dolarBlue) : 'ej: 1400'}" value="${dolarBlue ? Math.round(dolarBlue) : ''}" oninput="updateUSDTPreview()" />
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">Blue hoy: <span id="f-usdt-blue">${dolarBlue ? ars(dolarBlue) : "cargando..."}</span></div>
+        </div>
+        <div id="f-usdt-preview" style="font-size:13px;color:#86efac;font-weight:700;display:none"></div>
+      </div>
+    </div>
     <div class="form-group">
       <label style="display:flex;align-items:center;gap:8px">
         <input type="checkbox" id="f-recurrente" style="width:16px;height:16px;accent-color:var(--grande)" />
@@ -1227,6 +1243,38 @@ function buildCatGrid(containerId="cat-grid", tipo=null, selected=null) {
   if (containerId !== "cat-grid") grid.dataset.selected = sel || "";
 }
 
+
+// ── TOGGLE USDT EN NUEVO GASTO ────────────────────────────
+
+window.toggleUSDT = () => {
+  const sw = document.getElementById("f-usdt-switch");
+  const panel = document.getElementById("f-usdt-panel");
+  const isOn = sw.classList.toggle("on");
+  panel.style.display = isOn ? "flex" : "none";
+  if (isOn) {
+    // Actualizar TC con el blue actual
+    const tcInput = document.getElementById("f-usdt-tc");
+    if (tcInput && dolarBlue && !tcInput.value) tcInput.value = Math.round(dolarBlue);
+    const blueSpan = document.getElementById("f-usdt-blue");
+    if (blueSpan && dolarBlue) blueSpan.textContent = ars(dolarBlue);
+    updateUSDTPreview();
+  }
+};
+
+window.updateUSDTPreview = () => {
+  const monto = parseFloat(document.getElementById("f-monto")?.value || 0);
+  const tc = parseFloat(document.getElementById("f-usdt-tc")?.value || 0);
+  const preview = document.getElementById("f-usdt-preview");
+  if (!preview) return;
+  if (monto > 0 && tc > 0) {
+    const usdt = monto / tc;
+    preview.style.display = "block";
+    preview.textContent = `= ${usdt.toFixed(4)} USDT a TC ${ars(tc)}`;
+  } else {
+    preview.style.display = "none";
+  }
+};
+
 // ── AGREGAR GASTO ────────────────────────────────────────────
 window.agregarGasto = async () => {
   const desc = document.getElementById("f-desc").value.trim();
@@ -1245,10 +1293,27 @@ window.agregarGasto = async () => {
     const tag = document.getElementById("f-tag")?.value || "";
     const fotoUrl = document.getElementById("f-foto-url")?.value || "";
     const esRecurrente = document.getElementById("f-recurrente")?.checked || false;
+    const esUSDT = document.getElementById("f-usdt-switch")?.classList.contains("on") || false;
+    const usdtTC = esUSDT ? parseFloat(document.getElementById("f-usdt-tc")?.value || 0) : 0;
+    if (esUSDT && (!usdtTC || isNaN(usdtTC) || usdtTC <= 0)) {
+      showToast("Ingresá el tipo de cambio USDT","var(--red)"); return;
+    }
     if (esTarjeta) {
-      await addDoc(colGastosTarjeta, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, fotoUrl, tarjetaId:medioPago, timestamp:serverTimestamp() });
+      await addDoc(colGastosTarjeta, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, fotoUrl, tarjetaId:medioPago, pagadoEnUSDT:esUSDT, usdtTC:esUSDT?usdtTC:null, timestamp:serverTimestamp() });
     } else {
-      await addDoc(colGastos, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, fotoUrl, timestamp:serverTimestamp() });
+      await addDoc(colGastos, { descripcion:desc, monto, categoria:selectedCat, fecha, tipo:currentTipo, nota, tag, fotoUrl, pagadoEnUSDT:esUSDT, usdtTC:esUSDT?usdtTC:null, timestamp:serverTimestamp() });
+    }
+    // Si pagó en USDT, registrar la venta automáticamente en Cambios
+    if (esUSDT && usdtTC > 0) {
+      const usdtVendidos = monto / usdtTC;
+      await addDoc(colCambios, {
+        usd: usdtVendidos,
+        tc: usdtTC,
+        arsObtenidos: monto,
+        fecha,
+        nota: `Auto: ${desc}`,
+        timestamp: serverTimestamp()
+      });
     }
     if (esRecurrente) {
       const existente = recurrentes.find(r => r.descripcion === desc && r.categoria === selectedCat);
@@ -1264,6 +1329,8 @@ window.agregarGasto = async () => {
     if (document.getElementById("foto-preview")) { document.getElementById("foto-preview").style.display="none"; }
     if (document.getElementById("f-foto")) document.getElementById("f-foto").value = "";
     if (document.getElementById("f-recurrente")) document.getElementById("f-recurrente").checked = false;
+    const usdtSw = document.getElementById("f-usdt-switch");
+    if (usdtSw) { usdtSw.classList.remove("on"); document.getElementById("f-usdt-panel").style.display="none"; }
     selectedCat = ""; buildCatGrid();
     document.getElementById("f-monto").focus();
     showToast(esTarjeta ? "Gasto en tarjeta registrado ✓" : "Gasto registrado ✓");
@@ -1848,7 +1915,7 @@ function renderLista() {
     return `<div class="gasto-row" style="border-left-color:${color}">
       <div class="gasto-info">
         <span class="gasto-desc">${escHtml(g.descripcion)}</span>
-        <span class="gasto-cat">${escHtml(g.categoria)} · ${fecha}${g.tag ? ` <span class="tag tag-${g.tag}">${g.tag}</span>` : ""}</span>
+        <span class="gasto-cat">${escHtml(g.categoria)} · ${fecha}${g.pagadoEnUSDT ? ' <span style="color:#86efac;font-size:10px;font-weight:700">USDT</span>' : ''}${g.tag ? ` <span class="tag tag-${g.tag}">${g.tag}</span>` : ""}</span>
         ${g.nota ? `<span style="font-size:11px;color:var(--dim)">📝 ${escHtml(g.nota)}</span>` : ""}
       </div>
       <div class="gasto-right">
@@ -4006,6 +4073,7 @@ selAnio.addEventListener("change", e => { currentAnio=+e.target.value; render();
 document.getElementById("f-fecha").value = todayStr();
 document.getElementById("f-desc").addEventListener("keydown", e => { if(e.key==="Enter") agregarGasto(); });
 document.getElementById("f-monto").addEventListener("keydown", e => { if(e.key==="Enter") agregarGasto(); });
+document.getElementById("f-monto").addEventListener("input", () => { if(document.getElementById("f-usdt-switch")?.classList.contains("on")) updateUSDTPreview(); });
 // Limpiar cats viejas si existen
 ["cats_grande","cats_medio","cats_hormiga"].forEach(k => localStorage.removeItem(k));
 buildCatGrid();
